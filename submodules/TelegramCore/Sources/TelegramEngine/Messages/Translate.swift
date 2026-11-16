@@ -91,6 +91,19 @@ func _internal_translate(network: Network, text: String, toLang: String, entitie
 }
 
 func _internal_composeMessageWithAI(account: Account, text: String, entities: [MessageTextEntity], proofread: Bool = false, translateToLang: String? = nil, changeStyle: TelegramComposeAIMessageMode.CloudStyle.Reference? = nil, emojify: Bool = false) -> Signal<(String, [MessageTextEntity]), TranslationError> {
+    // AyuGram: the Translate sheet goes through this call; plain translation can use Google or Yandex instead
+    let ayuProvider = AyuTranslator.provider
+    if let translateToLang = translateToLang, ayuProvider != .telegram, !proofread, changeStyle == nil, !emojify, !text.isEmpty {
+        return AyuTranslator.translate(provider: ayuProvider, text: text, toLang: translateToLang)
+        |> castError(TranslationError.self)
+        |> mapToSignal { result -> Signal<(String, [MessageTextEntity]), TranslationError> in
+            if let result = result {
+                return .single((result, []))
+            } else {
+                return .fail(.generic)
+            }
+        }
+    }
     var flags: Int32 = 0
     if proofread {
         flags |= (1 << 0)
