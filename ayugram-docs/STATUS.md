@@ -16,11 +16,11 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 77 |
-| LOG ONLY | 5 |
-| UNTESTED | 15 |
+| TESTED | 78 |
+| LOG ONLY | 4 |
+| UNTESTED | 12 |
 | TODO | 0 |
-| N/A | 14 |
+| N/A | 13 |
 
 Some rows group several related desktop settings, so the row count is lower than the number of individual settings.
 
@@ -79,14 +79,14 @@ Some rows group several related desktop settings, so the row count is lower than
 | Filtered/hidden messages in chat list preview | - | TESTED | Shows "Filtered message" |
 | disableStories | off | UNTESTED | Switch on; no stories were available to compare (tried again on November 16: none in nash's chat list with the switch off either) |
 | disableCustomBackgrounds | off | UNTESTED | Ignores a photo wallpaper set for one chat, as on desktop; chat themes are left alone (seen November 16: a chat theme stayed with the switch on, which matches desktop). NEEDS THE USER: setting a photo wallpaper needs Photos access |
-| disableOpenLinkWarning | off | UNTESTED | Failed on run 43827376720: the switch only covered links in profiles, and a hidden link in a chat still asked (TESTING row 128). Fixed for links in chats in run 43961878070, to be retested. A hidden link can be made with Format, Link on selected text |
+| disableOpenLinkWarning | off | TESTED | Hidden links in chats and in profiles open without "Open link?"; links with a login part and proxy links still ask (TESTING row 133) |
 | disableNotificationsDelay | off | N/A | Desktop delays its own notifications while another device is online; iOS notifications come from Apple's push service and have no such delay to remove |
 | disableGreetingSticker | off | UNTESTED | Run 43002933120 |
 | hidePremiumStatuses | off | TESTED | Chat list only: the status icon next to a contact's name disappears |
 | collapseSimilarChannels | on | TESTED | Similar channels under the "you joined" notice start collapsed; tapping the notice opens them. Channels whose list was already loaded keep their state |
 | hideSimilarChannels | off | TESTED | The Similar Channels panel shown after joining a channel is gone with the switch on (run 43536445199) |
 | showOnlyAddedEmojisAndStickers | off | TESTED | Sticker panel only: trending strip and suggested packs gone after reopening the chat. Emoji panel not covered |
-| unlimitedRecentStickers | off | UNTESTED | Keeps up to 200 recent stickers on the device instead of 20. Needs more than 20 different stickers sent to check |
+| unlimitedRecentStickers | off | TESTED | Keeps up to 200 recent stickers on the device instead of 20; 22 kept after 23 were sent (TESTING row 137). After switching off the list shrinks back one sticker at a time as new ones are sent, as the stock store trims |
 
 ## Send confirmations
 
@@ -120,10 +120,10 @@ Some rows group several related desktop settings, so the row count is lower than
 | showPrivateChatReactions | on | TESTED | Reaction hidden with the switch off |
 | wideMultiplier | 1.0 | N/A | Desktop window layout |
 | hideNotificationCounters | off | TESTED | Chats tab counter only (run 43084196247) |
-| hideNotificationBadge | off | UNTESTED | The home screen cannot be reached over VNC; needs a look at the app icon on the iPad itself |
+| hideNotificationBadge | off | UNTESTED | With the app in front the badge is cleared and comes back when switched off (TESTING row 135). Pushes set their own badge; run 43968637447 makes the notification extension follow the switch, not yet tried (row 136) |
 | hideAllChatsFolder | off | TESTED | Hides the All Chats tab when there is at least one folder and starts on the first folder. The All Chats list stays reachable from the Chats tab long-press menu (no tab is highlighted then); swiping does not reach it |
 | channelBottomButton | Discuss | TESTED | Two switches: "Discuss Instead of Mute" (on by default; only for channels with a discussion group, others keep Mute) and "Hide". Discuss opens the linked group (run 43527721168) |
-| quickAdminShortcuts | on | TESTED | Recent Actions (admins) and Administrators (group members, channel admins) in the menu shown by holding the chat avatar; desktop has top-bar buttons. Administrators seen working (run 43561780256); Recent Actions not seen yet: a basic group has neither item, and a group with topics shows its own top-right menu, which gets both items from run 43961878070 (TESTING row 132, to be retested) |
+| quickAdminShortcuts | on | TESTED | Recent Actions (admins) and Administrators (group members, channel admins) in the menu shown by holding the chat avatar; desktop has top-bar buttons. Administrators seen working (run 43561780256); Recent Actions seen in a group with topics, whose own top-right menu carries both items (TESTING row 134). A basic group has neither item |
 
 ## Message field buttons
 
