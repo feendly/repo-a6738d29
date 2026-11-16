@@ -145,6 +145,9 @@ A feature counts as done only when its row says PASS.
 | 120 | Monospace font | run 43814121847 | Set "Monospace Font" to Courier; send `mono test 123` as code to luki | Code text in Courier | Row shows "Monospace Font: Courier"; the message renders in Courier. Reset to the default afterwards | PASS |
 | 121 | Translator: Google | run 43814121847 | Translator row to Google; hold a Russian post, Translate | Request to Google in the log | Translation shown, but no request in the log: the Translate sheet uses the AI compose call, which was not hooked. Hooked in the next build | FAIL, retest |
 | 122 | Repeat message | run 43814121847 | Override `showRepeatMessageInContextMenu` on; hold a text message nash sent to luki, Repeat | The same text is sent again | A second copy appeared below the first | PASS |
+| 123 | App icons from AyuGram Desktop | run 43820003583 | Settings, Appearance, App Icon; tap Win95; then tap the stock Default again | All 12 icons listed with their names; iOS confirms the change | All 12 shown; iOS alert "You have changed the icon for AyuGram" with the Win95 icon, and again with the stock icon when set back | PASS |
+| 124 | Translator: Google (retest) | run 43820003583 | As row 121 | Request to Google in the log | Still no request: the sheet uses the rich compose call, not the one hooked in this build. Hooked in the next build | FAIL, retest |
+| 125 | Monospace font reset | run 43820003583 | After the app restart, look at "mono test 123" | Back to Menlo | Menlo | PASS |
 
 ## Notes
 

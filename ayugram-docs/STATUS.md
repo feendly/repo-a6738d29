@@ -1,7 +1,7 @@
 # AyuGram for iOS: feature status
 
 One row per AyuGram Desktop setting or feature (source: `ayu/ayu_settings.h`
-and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43814121847 installed).
+and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43820003583 installed).
 
 Status values:
 
@@ -16,9 +16,9 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 73 |
+| TESTED | 74 |
 | LOG ONLY | 5 |
-| UNTESTED | 19 |
+| UNTESTED | 18 |
 | TODO | 0 |
 | N/A | 14 |
 
@@ -103,7 +103,7 @@ Some rows group several related desktop settings, so the row count is lower than
 |---|---|---|---|
 | showMessageSeconds | off | TESTED | |
 | showPeerId | Bot API | TESTED | ID row in user profiles; on/off only |
-| appIcon | default | UNTESTED | The 12 AyuGram Desktop icons (Default, Alt, Discord, Spotify, Extera, Nothing, Bard, YaPlus, Win95, Chibi, Chibi2, Extera2) are in the stock picker, Settings, Appearance, App Icon. Converted from the round desktop artwork and filled to a square with the edge colour |
+| appIcon | default | TESTED | The 12 AyuGram Desktop icons (Default, Alt, Discord, Spotify, Extera, Nothing, Bard, YaPlus, Win95, Chibi, Chibi2, Extera2) are in the stock picker, Settings, Appearance, App Icon. Converted from the round desktop artwork and filled to a square with the edge colour. Run 43820003583; the home screen itself was not looked at (not reachable over VNC) |
 | monoFont / main font | system | TESTED | "Monospace Font" row takes a font name; regular weight only (bold and italic monospace stay Menlo). Desktop has no separate main-font setting. Run 43814121847 |
 | messageBubbleRadius | 16 | N/A | Stock setting exists: Appearance, Message Corners |
 | removeMessageTail | off | TESTED | |
