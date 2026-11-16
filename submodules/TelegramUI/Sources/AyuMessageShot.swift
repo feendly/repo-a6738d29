@@ -4,15 +4,14 @@ import Foundation
 import UIKit
 import Display
 import TelegramCore
-import Postbox
 import TelegramPresentationData
 import AccountContext
 import ChatMessageItemView
 import ChatMessageItem
 
 extension ChatControllerImpl {
-    func ayuPresentMessageShot(messageIds: Set<MessageId>) {
-        var shots: [(index: MessageIndex, image: UIImage)] = []
+    func ayuPresentMessageShot(messageIds: Set<EngineMessage.Id>) {
+        var shots: [(index: EngineMessage.Index, image: UIImage)] = []
         self.chatDisplayNode.historyNode.forEachVisibleMessageItemNode { itemNode in
             guard let item = itemNode.item else {
                 return
