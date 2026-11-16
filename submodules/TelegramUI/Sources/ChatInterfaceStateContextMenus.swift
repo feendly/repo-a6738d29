@@ -1416,7 +1416,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
 
         // AyuGram: message shot (the message as an image)
         if AyuGramSettings.bool(.showMessageShotInContextMenu) && message.id.namespace == Namespaces.Message.Cloud {
-            var ayuShotIds = Set<MessageId>([message.id])
+            var ayuShotIds = Set<EngineMessage.Id>([message.id])
             if let selectionState = chatPresentationInterfaceState.interfaceState.selectionState, selectionState.selectedIds.contains(message.id) {
                 ayuShotIds = selectionState.selectedIds
             }
