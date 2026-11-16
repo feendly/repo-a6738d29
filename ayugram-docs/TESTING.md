@@ -148,6 +148,8 @@ A feature counts as done only when its row says PASS.
 | 123 | App icons from AyuGram Desktop | run 43820003583 | Settings, Appearance, App Icon; tap Win95; then tap the stock Default again | All 12 icons listed with their names; iOS confirms the change | All 12 shown; iOS alert "You have changed the icon for AyuGram" with the Win95 icon, and again with the stock icon when set back | PASS |
 | 124 | Translator: Google (retest) | run 43820003583 | As row 121 | Request to Google in the log | Still no request: the sheet uses the rich compose call, not the one hooked in this build. Hooked in the next build | FAIL, retest |
 | 125 | Monospace font reset | run 43820003583 | After the app restart, look at "mono test 123" | Back to Menlo | Menlo | PASS |
+| 126 | Translator: Google | run 43827376720 | Translator row on Google; hold a Russian post, Translate | Translation shown; request to Google in the log | "legend"; log `translate provider=google to=en status=200 ok=true` | PASS |
+| 127 | Translator: Yandex | run 43827376720 | Translator row on Yandex; same post | Translation shown; request to Yandex in the log | "legend"; log `translate provider=yandex to=en status=200 ok=true` | PASS |
 
 ## Notes
 
@@ -203,3 +205,4 @@ A feature counts as done only when its row says PASS.
 - Tapping the on-screen keyboard keys over VNC types reliably; typing through the VNC keyboard does not.
 - The settings screen opens either next to the chat list or full width, so row positions differ between openings; take a capture before tapping.
 - Row 122 and the hidden-link attempt left two messages from nash in the luki-nash chat (both "[hidden link](https://example.com)", 3:57 AM November 16).
+- Rows 126 and 127: the translator row was set back to Telegram afterwards. The post text was sent to Google and to Yandex once each.

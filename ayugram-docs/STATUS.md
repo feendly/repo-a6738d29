@@ -1,7 +1,7 @@
 # AyuGram for iOS: feature status
 
 One row per AyuGram Desktop setting or feature (source: `ayu/ayu_settings.h`
-and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43820003583 installed).
+and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43827376720 installed).
 
 Status values:
 
@@ -16,9 +16,9 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 74 |
+| TESTED | 75 |
 | LOG ONLY | 5 |
-| UNTESTED | 18 |
+| UNTESTED | 17 |
 | TODO | 0 |
 | N/A | 14 |
 
@@ -77,7 +77,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | localPremium | off | TESTED | Client side: premium flag for the logged-in accounts (star, premium-only rows). Server-enforced features stay locked. Restart to apply |
 | premiumStickersAsCopy | on | TESTED | Not in AyuGram Desktop; added at the user's request. Re-uploads a premium sticker and sends the copy. Animated stickers tested; user confirmed it shows as a sticker on another device; video stickers not checked. From run 43330220187 the copy send closes the panel, clears the reply bar and keeps the reply like a normal send (confirmed by the user) |
 | Filtered/hidden messages in chat list preview | - | TESTED | Shows "Filtered message" |
-| disableStories | off | UNTESTED | Switch on; no stories were available to compare |
+| disableStories | off | UNTESTED | Switch on; no stories were available to compare (tried again on November 16: none in nash's chat list with the switch off either) |
 | disableCustomBackgrounds | off | UNTESTED | run 43084196247 |
 | disableOpenLinkWarning | off | UNTESTED | Needs a message with a hidden link. The iOS message field does not turn `[text](url)` into a hidden link, so the test accounts could not make one from a prefilled draft |
 | disableNotificationsDelay | off | N/A | Desktop delays its own notifications while another device is online; iOS notifications come from Apple's push service and have no such delay to remove |
@@ -169,7 +169,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | Streamer mode | TESTED | Hides own phone number in Settings only (run 43084196247) |
 | Message shot (messages as image) | TESTED | "Message Shot" in the message menu renders the message (or the selected messages on screen) into one image and opens the share sheet. Desktop's theme and layout options are not ported. Run 43814121847; the image itself was not opened, only its size in the log |
 | Forward without author / from restricted chats / repeat message | UNTESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages), TESTED in row 122. With "Allow Copy and Save in Restricted Chats" on, Forward shows in chats with protected content and the message goes out as a copy (text plus the first photo or file, by reference, no re-upload; albums are not kept together). No restricted chat at hand to try it |
-| Translator providers (Telegram, Google, Yandex, native) | UNTESTED | "Translator" row in the Other section cycles Telegram, Google, Yandex. Google and Yandex use desktop's endpoints for the Translate action; plain text only (formatting is dropped), and chat-wide auto-translate stays on Telegram. No separate "native" provider: iOS has none to call |
+| Translator providers (Telegram, Google, Yandex, native) | TESTED | "Translator" row in the Other section cycles Telegram, Google, Yandex. Google and Yandex use desktop's endpoints for the Translate action; plain text only (formatting is dropped), and chat-wide auto-translate stays on Telegram. No separate "native" provider. Run 43827376720 |
 | Webview options (spoof Android, larger size) | TESTED | "Report Android to Mini Apps" TESTED by log (the mini app address from the server says ios with it off and android with it on). The two size options resize the desktop mini app window and have no iOS equivalent |
 | `tg://ayu` settings links | TESTED | `tg://ayusettings` opens the AyuGram screen |
 | Saved music, cover search | N/A | NOT PORTED, FOR THE USER TO CONFIRM: stock Telegram for iOS already shows profile music and looks up missing album art itself. Desktop AyuGram's additions are its own button design and an iTunes cover lookup for that button |
