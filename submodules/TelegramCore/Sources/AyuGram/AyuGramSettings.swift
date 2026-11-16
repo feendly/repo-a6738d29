@@ -243,6 +243,12 @@ public final class AyuGramSettings {
         return result
     }
 
+    /// View-once and self-destructing photos, videos and voice messages stay in the chat after they are opened
+    /// or expire. Follows the "save deleted messages" switch, as on desktop. Secret chats are not covered.
+    public static var keepSelfDestructingMedia: Bool {
+        return bool(.saveDeletedMessages)
+    }
+
     // MARK: Test hooks
 
     // A plist of setting name -> Bool at <tmp>/ayu-override.plist overrides stored values.

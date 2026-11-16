@@ -84,6 +84,9 @@ func managedAutoremoveMessageOperations(network: Network, postbox: Postbox, isRe
                     if let message = transaction.getMessage(entry.messageId) {
                         if message.id.peerId.namespace == Namespaces.Peer.SecretChat || isRemove {
                             _internal_deleteMessages(transaction: transaction, mediaBox: postbox.mediaBox, ids: [entry.messageId])
+                        } else if AyuGramSettings.keepSelfDestructingMedia {
+                            // AyuGram: keep view-once and self-destructing media
+                            AyuGramSettings.debugLog("self-destruct kept message=\(entry.messageId.peerId.toInt64())/\(entry.messageId.id)")
                         } else {
                             transaction.updateMessage(message.id, update: { currentMessage in
                                 var storeForwardInfo: StoreMessageForwardInfo?

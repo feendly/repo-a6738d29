@@ -324,6 +324,11 @@ extension ReplayContext {
             if AyuGramSettings.bool(.saveMessagesHistory), !previousMessage.text.isEmpty, previousMessage.text != message.text {
                 AyuMessagesStore.shared.addEdit(id, previousText: previousMessage.text, timestamp: Int32(Date().timeIntervalSince1970))
             }
+            // AyuGram: the server replaces opened view-once media with an "expired" placeholder; keep what is stored.
+            if AyuGramSettings.keepSelfDestructingMedia, message.media.contains(where: { $0 is TelegramMediaExpiredContent }), previousMessage.media.contains(where: { $0 is TelegramMediaImage || $0 is TelegramMediaFile }) {
+                AyuGramSettings.debugLog("self-destruct edit ignored message=\(id.peerId.toInt64())/\(id.id)")
+                return .skip
+            }
             let peers: [PeerId:Peer] = previousMessage.peers.reduce([:], { current, value in
                 var current = current
                 current[value.0] = value.1
