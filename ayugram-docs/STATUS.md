@@ -18,9 +18,9 @@ Status values:
 |---|---|
 | TESTED | 69 |
 | LOG ONLY | 5 |
-| UNTESTED | 21 |
-| TODO | 6 |
-| N/A | 11 |
+| UNTESTED | 23 |
+| TODO | 0 |
+| N/A | 14 |
 
 Some rows group several related desktop settings, so the row count is lower than the number of individual settings.
 
@@ -54,8 +54,8 @@ Some rows group several related desktop settings, so the row count is lower than
 | semiTransparentDeletedMessages | off | TESTED | Bubble messages only (run 43084196247) |
 | Deleted messages while app is closed | - | TESTED | App now stays running in the background (see Stay Connected). Kept a deletion sent from another device while the app was in the background (TESTING row 43). Not captured after a device reboot until the app runs again |
 | Deleted messages in groups and channels | - | TESTED | Group: nash's message deleted for everyone stays visible for luki with the deleted mark. Channel: log only |
-| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history and deleted chats are not ported |
-| Proper database instead of a plist file | - | TODO | |
+| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history and deleted chats: no separate code; in private chats the server reports them as ordinary message deletions, which the deleted-messages logger already keeps (not tried) |
+| Proper database instead of a plist file | - | N/A | NOT PORTED, FOR THE USER TO CONFIRM: internal storage only, nothing to see in the app. Kept deletions and edit history live in a plist store that has worked through every test; desktop's separate database is not needed for any ported feature |
 | Edit history viewer | - | TESTED | Sheet listing each earlier version with its time and a copy button |
 
 ## Filters
@@ -103,7 +103,7 @@ Some rows group several related desktop settings, so the row count is lower than
 |---|---|---|---|
 | showMessageSeconds | off | TESTED | |
 | showPeerId | Bot API | TESTED | ID row in user profiles; on/off only |
-| appIcon | default | TODO | |
+| appIcon | default | UNTESTED | The 12 AyuGram Desktop icons (Default, Alt, Discord, Spotify, Extera, Nothing, Bard, YaPlus, Win95, Chibi, Chibi2, Extera2) are in the stock picker, Settings, Appearance, App Icon. Converted from the round desktop artwork and filled to a square with the edge colour |
 | monoFont / main font | system | UNTESTED | "Monospace Font" row takes a font name; regular weight only (bold and italic monospace stay Menlo). Desktop has no separate main-font setting |
 | messageBubbleRadius | 16 | N/A | Stock setting exists: Appearance, Message Corners |
 | removeMessageTail | off | TESTED | |
@@ -112,7 +112,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | materialSwitches | on | N/A | iOS uses system switches |
 | simpleQuotesAndReplies | off | TESTED | Reply, quote and link preview blocks lose the fill and emoji pattern; the side line stays (run 43536445199, checked on a link preview) |
 | replaceBottomInfoWithIcons | on | TESTED | "Icons Instead of Edited and Deleted Marks": a pencil glyph for edited and a bin glyph for deleted next to the time, overriding the custom marks. Text glyphs, not drawn icons as on desktop (run 43556106622) |
-| adaptiveCoverColor | on | TODO | Only affects the saved music screen, which is not ported (see Saved music) |
+| adaptiveCoverColor | on | N/A | NOT PORTED, FOR THE USER TO CONFIRM: tints desktop AyuGram's own profile-music button with the cover's colour. iOS shows profile music with the stock design, which has no such button (see Saved music) |
 | improveLinkPreviews | off | TESTED | Previews for X, TikTok, Reddit, Instagram and Pixiv links are requested from the mirror hosts desktop uses; the message text keeps the original link (run 43561780256) |
 | hideFastShare | off | TESTED | Share arrow next to channel posts gone |
 | showChannelReactions | on | TESTED | Reaction row under a channel post hidden with the switch off |
@@ -169,10 +169,10 @@ Some rows group several related desktop settings, so the row count is lower than
 | Streamer mode | TESTED | Hides own phone number in Settings only (run 43084196247) |
 | Message shot (messages as image) | UNTESTED | "Message Shot" in the message menu renders the message (or the selected messages on screen) into one image and opens the share sheet. Desktop's theme and layout options are not ported |
 | Forward without author / from restricted chats / repeat message | UNTESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages). With "Allow Copy and Save in Restricted Chats" on, Forward shows in chats with protected content and the message goes out as a copy (text plus the first photo or file, by reference, no re-upload; albums are not kept together). No restricted chat at hand to try it |
-| Translator providers (Telegram, Google, Yandex, native) | TODO | |
+| Translator providers (Telegram, Google, Yandex, native) | UNTESTED | "Translator" row in the Other section cycles Telegram, Google, Yandex. Google and Yandex use desktop's endpoints for the Translate action; plain text only (formatting is dropped), and chat-wide auto-translate stays on Telegram. No separate "native" provider: iOS has none to call |
 | Webview options (spoof Android, larger size) | TESTED | "Report Android to Mini Apps" TESTED by log (the mini app address from the server says ios with it off and android with it on). The two size options resize the desktop mini app window and have no iOS equivalent |
 | `tg://ayu` settings links | TESTED | `tg://ayusettings` opens the AyuGram screen |
-| Saved music, cover search | TODO | Low priority |
+| Saved music, cover search | N/A | NOT PORTED, FOR THE USER TO CONFIRM: stock Telegram for iOS already shows profile music and looks up missing album art itself. Desktop AyuGram's additions are its own button design and an iTunes cover lookup for that button |
 | Crash reporting to AyuGram | N/A | Deliberately not ported |
 | Donate / plugin info boxes | N/A | Desktop project specific |
 
