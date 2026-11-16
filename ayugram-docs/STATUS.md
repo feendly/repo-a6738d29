@@ -18,8 +18,8 @@ Status values:
 |---|---|
 | TESTED | 68 |
 | LOG ONLY | 5 |
-| UNTESTED | 17 |
-| TODO | 11 |
+| UNTESTED | 19 |
+| TODO | 9 |
 | N/A | 11 |
 
 Some rows group several related desktop settings, so the row count is lower than the number of individual settings.
@@ -46,7 +46,7 @@ Some rows group several related desktop settings, so the row count is lower than
 
 | Setting | Desktop default | iOS status | Notes |
 |---|---|---|---|
-| saveDeletedMessages | on | TESTED | Live deletion in a private chat |
+| saveDeletedMessages | on | TESTED | Live deletion in a private chat. A deleted photo message keeps its picture when it had loaded before the deletion (TESTING row 114); voice and video not tried |
 | saveMessagesHistory (edits) | on | TESTED | "Edit History" in the long-press menu |
 | saveForBots | off | UNTESTED | |
 | deletedMark | broom | TESTED | Broom shown. Custom mark: prompt opens with the current value; custom mark saved and shown (row 42) |
@@ -54,7 +54,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | semiTransparentDeletedMessages | off | TESTED | Bubble messages only (run 43084196247) |
 | Deleted messages while app is closed | - | TESTED | App now stays running in the background (see Stay Connected). Kept a deletion sent from another device while the app was in the background (TESTING row 43). Not captured after a device reboot until the app runs again |
 | Deleted messages in groups and channels | - | TESTED | Group: nash's message deleted for everyone stays visible for luki with the deleted mark. Channel: log only |
-| Self-destructing media, cleared history, deleted chats | - | TODO | |
+| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). Cleared history and deleted chats are not ported |
 | Proper database instead of a plist file | - | TODO | |
 | Edit history viewer | - | TESTED | Sheet listing each earlier version with its time and a copy button |
 
@@ -67,7 +67,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | hideFromBlocked | off | TESTED (groups only: after luki blocked nash, nash's messages and join notice disappeared from the Test group. Only for users whose blocked state the app has loaded or changed since this version. The chat list preview shows "Filtered message" once the row is redrawn; the author's name stays) |
 | shadowBanIds | empty | TESTED (via message menu, shown in the filter list as user:<id>) |
 | filterZalgo | off | TESTED (nash's zalgo message hidden for luki, "Filtered message" in the chat list) |
-| Per-chat filters, import/export | - | TODO |
+| Per-chat filters, import/export | - | UNTESTED | "Add to Filters for This Chat" in the message menu stores `chat:<id>:<pattern>`; "Copy Filters to Clipboard" and "Import Filters from Clipboard" in settings (own JSON format, not desktop's) |
 
 ## Premium, ads and clutter
 

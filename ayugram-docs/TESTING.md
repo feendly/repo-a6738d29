@@ -136,6 +136,7 @@ A feature counts as done only when its row says PASS.
 | 111 | Quick admin shortcuts: Recent Actions | run 43561780256 | - | Item shown where the account is an admin | Not run: no chat at hand where nash or luki is an admin | NOT RUN |
 | 112 | Ordinary forwarding after the restricted-chat change | run 43790136052 | nash forwards "edi icon test v2" to the luki chat | A normal forward with the "Forwarded from" header | Sent with "Forwarded from nash" | PASS |
 | 113 | Forward from a chat with protected content | run 43790136052 | - | Message goes out as a copy | Not run: no chat with protected content on either account | NOT RUN |
+| 114 | Deleted photo message keeps its picture | run 43790136052 | luki forwards a Telegram News photo post to nash; nash opens the chat so the photo loads; luki deletes it for both; nash reopens the chat | Message stays with the deleted mark and the picture | Stays with the bin mark; picture and caption shown | PASS |
 
 ## Notes
 
@@ -182,3 +183,4 @@ A feature counts as done only when its row says PASS.
 - Row 109 left one message from nash in the luki-nash chat (the x.com link, 8:44 PM November 15). `tg://resolve?domain=<username>&text=<encoded text>` prefills a draft, which avoids typing over VNC.
 - Row 112 left one forwarded message from nash in the luki-nash chat (12:09 AM November 16).
 - The iPad was not charging on November 15 and 16 (87% down to 8%); the two drops off the network during a copy were the battery running out, followed by a reboot.
+- Switching accounts over VNC: hold the account avatar in the bottom bar, then tap the other account (the current one is listed first of the two).
