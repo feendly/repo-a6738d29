@@ -219,6 +219,26 @@ public final class AyuGramSettings {
 
     public static func setBool(_ key: BoolKey, _ value: Bool) {
         defaults.set(value, forKey: effectiveStorageKey(key))
+        if key == .hideNotificationBadge {
+            mirrorHideBadge()
+        }
+    }
+
+    // The notification extension writes the badge onto each push it shows, but cannot read the app's own
+    // defaults, so "Hide App Icon Badge" is copied into the app group's defaults for it.
+    private static let hideBadgeAppGroupKey = "ayu.hideNotificationBadge"
+
+    /// Called by the main app: copies the current "Hide App Icon Badge" value into the app group.
+    public static func mirrorHideBadge() {
+        guard let bundleId = Bundle.main.bundleIdentifier else {
+            return
+        }
+        UserDefaults(suiteName: "group.\(bundleId)")?.set(bool(.hideNotificationBadge), forKey: hideBadgeAppGroupKey)
+    }
+
+    /// Read by the notification extension, which passes the app group name.
+    public static func hideBadgeFromAppGroup(_ appGroupName: String) -> Bool {
+        return UserDefaults(suiteName: appGroupName)?.bool(forKey: hideBadgeAppGroupKey) ?? false
     }
 
     /// Name of the font used for monospace text; nil means the stock Menlo. Display reads the same key.

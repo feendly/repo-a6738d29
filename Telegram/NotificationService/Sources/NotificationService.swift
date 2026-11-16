@@ -690,7 +690,12 @@ private struct NotificationContent: CustomStringConvertible {
             content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: sound))
         }
         if let badge = self.badge {
-            content.badge = badge as NSNumber
+            // AyuGram: "Hide App Icon Badge" (mirrored into the app group by the main app).
+            if let bundleId = Bundle.main.bundleIdentifier, let dot = bundleId.lastIndex(of: "."), AyuGramSettings.hideBadgeFromAppGroup("group.\(bundleId[..<dot])") {
+                content.badge = 0
+            } else {
+                content.badge = badge as NSNumber
+            }
         }
         if let category = self.category {
             content.categoryIdentifier = category
