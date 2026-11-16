@@ -1414,6 +1414,22 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             })))
         }
 
+        // AyuGram: message shot (the message as an image)
+        if AyuGramSettings.bool(.showMessageShotInContextMenu) && message.id.namespace == Namespaces.Message.Cloud {
+            var ayuShotIds = Set<MessageId>([message.id])
+            if let selectionState = chatPresentationInterfaceState.interfaceState.selectionState, selectionState.selectedIds.contains(message.id) {
+                ayuShotIds = selectionState.selectedIds
+            }
+            actions.append(.action(ContextMenuActionItem(text: "Message Shot", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Image"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                Queue.mainQueue().after(0.5, {
+                    (interfaceInteraction.chatController() as? ChatControllerImpl)?.ayuPresentMessageShot(messageIds: ayuShotIds)
+                })
+            })))
+        }
+
         // AyuGram: hide the message on this device
         if AyuGramSettings.bool(.showHideMessageInContextMenu) && message.id.namespace == Namespaces.Message.Cloud {
             let ayuHideId = message.id

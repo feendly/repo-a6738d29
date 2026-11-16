@@ -93,6 +93,7 @@ public final class AyuGramSettings {
         case replaceBottomInfoWithIcons
         case improveLinkPreviews
         case quickAdminShortcuts
+        case showMessageShotInContextMenu
 
         public var defaultValue: Bool {
             switch self {
@@ -156,7 +157,7 @@ public final class AyuGramSettings {
                 return false
             case .showLReadToggleInDrawer, .showStreamerToggleInDrawer:
                 return false
-            case .showSReadToggleInDrawer, .showGhostToggleInDrawer, .suggestGhostModeBeforeViewingStory, .collapseSimilarChannels, .channelBottomButtonDiscuss, .showAiEditorButtonInMessageField, .replaceBottomInfoWithIcons, .quickAdminShortcuts:
+            case .showSReadToggleInDrawer, .showGhostToggleInDrawer, .suggestGhostModeBeforeViewingStory, .collapseSimilarChannels, .channelBottomButtonDiscuss, .showAiEditorButtonInMessageField, .replaceBottomInfoWithIcons, .quickAdminShortcuts, .showMessageShotInContextMenu:
                 return true
             case .unlimitedRecentStickers, .showOnlyAddedEmojisAndStickers, .hideFromBlocked, .cleanLinks, .cleanLinksStrict, .hideAllChatsFolder, .spoofWebviewAsAndroid, .channelBottomButtonHidden, .singleCornerRadius, .simpleQuotesAndReplies, .improveLinkPreviews:
                 return false

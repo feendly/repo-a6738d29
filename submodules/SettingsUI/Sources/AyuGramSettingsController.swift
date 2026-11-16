@@ -370,6 +370,7 @@ private func ayuGramSettingsControllerEntries() -> [AyuGramSettingsEntry] {
         (.showAddFilterInContextMenu, "Add to Filters in Message Menu"),
         (.showHideMessageInContextMenu, "Hide in Message Menu"),
         (.showRepeatMessageInContextMenu, "Repeat in Message Menu"),
+        (.showMessageShotInContextMenu, "Message Shot in Message Menu"),
         (.showUserMessagesInContextMenu, "User Messages in Message Menu (Groups)"),
         (.showReactionsPanelInContextMenu, "Reactions Bar in Message Menu"),
         (.showViewsPanelInContextMenu, "Read and Reactions Row in Message Menu"),
