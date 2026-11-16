@@ -144,6 +144,7 @@ A feature counts as done only when its row says PASS.
 | 119 | Per-account ghost mode | run 43814121847 | Turn "One Ghost Mode for All Accounts" off; as nash turn Send Read Receipts off; switch to luki and back | Each account keeps its own value | Log on each switch: luki `sendRead=true`, nash `sendRead=false`, `globalGhost=false`. Restored afterwards: nash read receipts on, the switch back on, global values unchanged (read on, online off, typing off) | PASS |
 | 120 | Monospace font | run 43814121847 | Set "Monospace Font" to Courier; send `mono test 123` as code to luki | Code text in Courier | Row shows "Monospace Font: Courier"; the message renders in Courier. Reset to the default afterwards | PASS |
 | 121 | Translator: Google | run 43814121847 | Translator row to Google; hold a Russian post, Translate | Request to Google in the log | Translation shown, but no request in the log: the Translate sheet uses the AI compose call, which was not hooked. Hooked in the next build | FAIL, retest |
+| 122 | Repeat message | run 43814121847 | Override `showRepeatMessageInContextMenu` on; hold a text message nash sent to luki, Repeat | The same text is sent again | A second copy appeared below the first | PASS |
 
 ## Notes
 
@@ -198,3 +199,4 @@ A feature counts as done only when its row says PASS.
 - Row 119: while the switch was off (about a minute) nash and luki used the per-account defaults, so online and typing status were sent for that minute.
 - Tapping the on-screen keyboard keys over VNC types reliably; typing through the VNC keyboard does not.
 - The settings screen opens either next to the chat list or full width, so row positions differ between openings; take a capture before tapping.
+- Row 122 and the hidden-link attempt left two messages from nash in the luki-nash chat (both "[hidden link](https://example.com)", 3:57 AM November 16).

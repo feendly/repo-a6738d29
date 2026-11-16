@@ -16,9 +16,9 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 72 |
+| TESTED | 73 |
 | LOG ONLY | 5 |
-| UNTESTED | 20 |
+| UNTESTED | 19 |
 | TODO | 0 |
 | N/A | 14 |
 
@@ -79,7 +79,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | Filtered/hidden messages in chat list preview | - | TESTED | Shows "Filtered message" |
 | disableStories | off | UNTESTED | Switch on; no stories were available to compare |
 | disableCustomBackgrounds | off | UNTESTED | run 43084196247 |
-| disableOpenLinkWarning | off | UNTESTED | Needs a message with a hidden link |
+| disableOpenLinkWarning | off | UNTESTED | Needs a message with a hidden link. The iOS message field does not turn `[text](url)` into a hidden link, so the test accounts could not make one from a prefilled draft |
 | disableNotificationsDelay | off | N/A | Desktop delays its own notifications while another device is online; iOS notifications come from Apple's push service and have no such delay to remove |
 | disableGreetingSticker | off | UNTESTED | Run 43002933120 |
 | hidePremiumStatuses | off | TESTED | Chat list only: the status icon next to a contact's name disappears |
@@ -168,7 +168,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | AyuGram settings screen | TESTED | Ghost, history, filters and other sections; Add Filter prompt works |
 | Streamer mode | TESTED | Hides own phone number in Settings only (run 43084196247) |
 | Message shot (messages as image) | TESTED | "Message Shot" in the message menu renders the message (or the selected messages on screen) into one image and opens the share sheet. Desktop's theme and layout options are not ported. Run 43814121847; the image itself was not opened, only its size in the log |
-| Forward without author / from restricted chats / repeat message | UNTESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages). With "Allow Copy and Save in Restricted Chats" on, Forward shows in chats with protected content and the message goes out as a copy (text plus the first photo or file, by reference, no re-upload; albums are not kept together). No restricted chat at hand to try it |
+| Forward without author / from restricted chats / repeat message | UNTESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages), TESTED in row 122. With "Allow Copy and Save in Restricted Chats" on, Forward shows in chats with protected content and the message goes out as a copy (text plus the first photo or file, by reference, no re-upload; albums are not kept together). No restricted chat at hand to try it |
 | Translator providers (Telegram, Google, Yandex, native) | UNTESTED | "Translator" row in the Other section cycles Telegram, Google, Yandex. Google and Yandex use desktop's endpoints for the Translate action; plain text only (formatting is dropped), and chat-wide auto-translate stays on Telegram. No separate "native" provider: iOS has none to call |
 | Webview options (spoof Android, larger size) | TESTED | "Report Android to Mini Apps" TESTED by log (the mini app address from the server says ios with it off and android with it on). The two size options resize the desktop mini app window and have no iOS equivalent |
 | `tg://ayu` settings links | TESTED | `tg://ayusettings` opens the AyuGram screen |
@@ -181,7 +181,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | Feature | Status | Notes |
 |---|---|---|
 | Stay Connected in Background | TESTED | Kept a deletion sent from another device while the app was in the background (TESTING row 43). Shows the system location indicator |
-| All accounts receive updates at once | UNTESTED | Part of keep-alive |
+| All accounts receive updates at once | TESTED | Part of keep-alive. Seen in TESTING row 114: nash received luki's message and kept its deletion while luki was the account in front |
 | Debug log and test override files | TESTED | Test aids; to be removed or hidden before release |
 | Link cleaner for outgoing messages | TESTED | Requested by the user 2026-11-12. "Remove Tracking from Links I Send" drops known tracking parameters; "Strict Link Cleaning" drops every parameter a site does not need and the fragment, after Link Cleaner (corbindavenport/link-cleaner-js, MIT). Only text the system link detector recognises as a web link is changed, bare domains included; Telegram links and code are left alone. Edited messages are not covered |
 | Edit Sticker on premium stickers | TESTED | Requested by the user 2026-11-12. Offered when Send Premium Stickers as a Copy is on; the edited sticker is a new upload and is delivered. The editor produces a still image, so the animation is lost. Checked from the sticker panel menu, not from the message menu |
