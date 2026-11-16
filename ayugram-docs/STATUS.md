@@ -1,7 +1,7 @@
 # AyuGram for iOS: feature status
 
 One row per AyuGram Desktop setting or feature (source: `ayu/ayu_settings.h`
-and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43556106622 installed).
+and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43561780256 installed).
 
 Status values:
 
@@ -16,9 +16,9 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 65 |
+| TESTED | 67 |
 | LOG ONLY | 5 |
-| UNTESTED | 18 |
+| UNTESTED | 16 |
 | TODO | 13 |
 | N/A | 11 |
 
@@ -113,7 +113,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | simpleQuotesAndReplies | off | TESTED | Reply, quote and link preview blocks lose the fill and emoji pattern; the side line stays (run 43536445199, checked on a link preview) |
 | replaceBottomInfoWithIcons | on | TESTED | "Icons Instead of Edited and Deleted Marks": a pencil glyph for edited and a bin glyph for deleted next to the time, overriding the custom marks. Text glyphs, not drawn icons as on desktop (run 43556106622) |
 | adaptiveCoverColor | on | TODO | Only affects the saved music screen, which is not ported (see Saved music) |
-| improveLinkPreviews | off | UNTESTED | Previews for X, TikTok, Reddit, Instagram and Pixiv links are requested from the mirror hosts desktop uses; the message text keeps the original link. Run 43556106622 missed links typed without `https://`; fixed in the next build |
+| improveLinkPreviews | off | TESTED | Previews for X, TikTok, Reddit, Instagram and Pixiv links are requested from the mirror hosts desktop uses; the message text keeps the original link (run 43561780256) |
 | hideFastShare | off | TESTED | Share arrow next to channel posts gone |
 | showChannelReactions | on | TESTED | Reaction row under a channel post hidden with the switch off |
 | showGroupReactions | on | TESTED | Run 43002933120 |
@@ -123,7 +123,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | hideNotificationBadge | off | UNTESTED | The home screen cannot be reached over VNC; needs a look at the app icon on the iPad itself |
 | hideAllChatsFolder | off | TESTED | Hides the All Chats tab when there is at least one folder and starts on the first folder. The All Chats list stays reachable from the Chats tab long-press menu (no tab is highlighted then); swiping does not reach it |
 | channelBottomButton | Discuss | TESTED | Two switches: "Discuss Instead of Mute" (on by default; only for channels with a discussion group, others keep Mute) and "Hide". Discuss opens the linked group (run 43527721168) |
-| quickAdminShortcuts | on | UNTESTED | Recent Actions (admins) and Administrators (group members, channel admins) in the menu shown by holding the chat avatar; desktop has top-bar buttons |
+| quickAdminShortcuts | on | TESTED | Recent Actions (admins) and Administrators (group members, channel admins) in the menu shown by holding the chat avatar; desktop has top-bar buttons. Administrators seen working (run 43561780256); Recent Actions not seen, no chat at hand where the account is an admin |
 
 ## Message field buttons
 

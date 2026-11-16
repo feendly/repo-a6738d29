@@ -131,6 +131,9 @@ A feature counts as done only when its row says PASS.
 | 106 | Hide similar channels | run 43536445199 | Override on; reopen Telegram News (joined on November 13, panel showing) | Similar Channels panel gone | Gone; back with the override cleared | PASS |
 | 107 | Icons instead of edited and deleted marks | run 43556106622 | Default on; as nash open the luki chat, look at kept deleted messages; send "edi icon test" to luki and edit it; then override off and reopen | Bin glyph on deleted, pencil glyph on edited; old marks with it off | Bin on the two deleted messages of November 11 and pencil on the edited message; with the override off the deleted ones show the broom mark again | PASS |
 | 108 | Improve link previews | run 43556106622 | Override on; type `x.com/...` as a draft | Log line `link preview ... -> fixupx.com` | No log line: a link without a scheme was not rewritten. Fixed in code; typing over VNC also dropped letters, so no valid link was entered | FAIL, retest on next build |
+| 109 | Improve link previews (retest) | run 43561780256 | Override on; open the luki chat with the draft prefilled to `https://x.com/jack/status/20`; send | Preview from the mirror, message keeps the x.com link | Log `link preview https://x.com/jack/status/20 -> https://fixupx.com/jack/status/20`; draft and sent message show a FixupX preview under the x.com link | PASS |
+| 110 | Quick admin shortcuts: Administrators | run 43561780256 | Hold the chat avatar in a channel where nash is a subscriber, then in its discussion group | Channel: no extra items; group: Administrators, opening the admin list | Channel shows Open Profile and Search only; group adds Administrators, which opens Chat Admins | PASS |
+| 111 | Quick admin shortcuts: Recent Actions | run 43561780256 | - | Item shown where the account is an admin | Not run: no chat at hand where nash or luki is an admin | NOT RUN |
 
 ## Notes
 
@@ -174,3 +177,4 @@ A feature counts as done only when its row says PASS.
 - Row 95 left five bird stickers from luki in the luki-nash chat (9:09 to 9:12 PM). Without real or Local Premium the panel shows no badge on premium stickers that I could make out over VNC; swipe-left on a message sets a reply over VNC.
 - Rows 98 and 99 (with the user's go-ahead): nash is now a member of Telegram News and has a started Durger King bot chat. The iPad came back in landscape after a battery outage.
 - Row 107 left one message from nash in the luki-nash chat ("edi icon test v2", 1:57 AM November 14). Typing over VNC drops letters when sent quickly.
+- Row 109 left one message from nash in the luki-nash chat (the x.com link, 8:44 PM November 15). `tg://resolve?domain=<username>&text=<encoded text>` prefills a draft, which avoids typing over VNC.
