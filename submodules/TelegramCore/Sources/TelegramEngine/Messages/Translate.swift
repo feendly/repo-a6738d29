@@ -30,6 +30,19 @@ public enum TranslationTone: String {
 }
 
 func _internal_translate(network: Network, text: String, toLang: String, entities: [MessageTextEntity] = [], tone: TranslationTone = .neutral, peer: Api.InputPeer? = nil, messageId: Int32? = nil) -> Signal<(String, [MessageTextEntity])?, TranslationError> {
+    // AyuGram: Google or Yandex instead of Telegram's translator (plain text only)
+    let ayuProvider = AyuTranslator.provider
+    if ayuProvider != .telegram && !text.isEmpty {
+        return AyuTranslator.translate(provider: ayuProvider, text: text, toLang: toLang)
+        |> castError(TranslationError.self)
+        |> mapToSignal { result -> Signal<(String, [MessageTextEntity])?, TranslationError> in
+            if let result = result {
+                return .single((result, []))
+            } else {
+                return .fail(.generic)
+            }
+        }
+    }
     var flags: Int32 = 0
 
     if tone != .neutral {
@@ -173,6 +186,22 @@ func _internal_composeRichMessageWithAI(account: Account, instantPage: InstantPa
 }
 
 func _internal_translateTexts(network: Network, texts: [(String, [MessageTextEntity])], toLang: String, tone: TranslationTone = .neutral) -> Signal<[(String, [MessageTextEntity])], TranslationError> {
+    // AyuGram: Google or Yandex instead of Telegram's translator (plain text only)
+    let ayuProvider = AyuTranslator.provider
+    if ayuProvider != .telegram && !texts.isEmpty {
+        return combineLatest(texts.map { AyuTranslator.translate(provider: ayuProvider, text: $0.0, toLang: toLang) })
+        |> castError(TranslationError.self)
+        |> mapToSignal { results -> Signal<[(String, [MessageTextEntity])], TranslationError> in
+            var translated: [(String, [MessageTextEntity])] = []
+            for result in results {
+                guard let result = result else {
+                    return .fail(.generic)
+                }
+                translated.append((result, []))
+            }
+            return .single(translated)
+        }
+    }
     var flags: Int32 = 0
     flags |= (1 << 1)
     

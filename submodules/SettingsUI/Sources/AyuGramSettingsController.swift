@@ -422,6 +422,7 @@ private func ayuGramSettingsControllerEntries() -> [AyuGramSettingsEntry] {
         entries.append(.otherToggle(index, key, title, AyuGramSettings.bool(key)))
         index += 1
     }
+    entries.append(.filterAction(11, "Translator: \(AyuTranslator.provider.title)"))
     entries.append(.filterAction(10, "Monospace Font: \(AyuGramSettings.monoFont ?? "Menlo")"))
     entries.append(.otherInfo("Link cleaning only changes text that Telegram recognises as a web link, including links without https, and never Telegram links or code. Strict cleaning follows Link Cleaner and can break links on sites that need their parameters. Local Premium only unlocks features on this device and takes effect after restarting the app. Staying connected in the background uses location access to keep the app running so deleted messages are caught while it is closed; it also takes effect after a restart and uses more battery."))
 
@@ -462,6 +463,11 @@ public func ayuGramSettingsController(context: AccountContext) -> ViewController
         bump()
     }, filterAction: { index in
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+        if index == 11 {
+            AyuTranslator.cycleProvider()
+            bump()
+            return
+        }
         if index == 10 {
             let controller = promptController(context: context, text: "Monospace Font", subtitle: "Font name, such as Courier or Menlo-Regular. Leave empty for the default. Reopen a chat to see it.", value: AyuGramSettings.monoFont, placeholder: "Menlo-Regular", apply: { value in
                 guard let value = value else {
