@@ -16,10 +16,10 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 67 |
+| TESTED | 68 |
 | LOG ONLY | 5 |
-| UNTESTED | 16 |
-| TODO | 13 |
+| UNTESTED | 17 |
+| TODO | 11 |
 | N/A | 11 |
 
 Some rows group several related desktop settings, so the row count is lower than the number of individual settings.
@@ -168,9 +168,9 @@ Some rows group several related desktop settings, so the row count is lower than
 | AyuGram settings screen | TESTED | Ghost, history, filters and other sections; Add Filter prompt works |
 | Streamer mode | TESTED | Hides own phone number in Settings only (run 43084196247) |
 | Message shot (messages as image) | TODO | 7 options |
-| Forward without author / from restricted chats / repeat message | TODO | Copy and save in restricted chats is implemented (UNTESTED, no restricted chat at hand) |
+| Forward without author / from restricted chats / repeat message | UNTESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages). With "Allow Copy and Save in Restricted Chats" on, Forward shows in chats with protected content and the message goes out as a copy (text plus the first photo or file, by reference, no re-upload; albums are not kept together). No restricted chat at hand to try it |
 | Translator providers (Telegram, Google, Yandex, native) | TODO | |
-| Webview options (spoof Android, larger size) | TODO | "Report Android to Mini Apps" is coded (TESTED by log: the mini app address from the server says ios with it off and android with it on); the two size options are not |
+| Webview options (spoof Android, larger size) | TESTED | "Report Android to Mini Apps" TESTED by log (the mini app address from the server says ios with it off and android with it on). The two size options resize the desktop mini app window and have no iOS equivalent |
 | `tg://ayu` settings links | TESTED | `tg://ayusettings` opens the AyuGram screen |
 | Saved music, cover search | TODO | Low priority |
 | Crash reporting to AyuGram | N/A | Deliberately not ported |
