@@ -333,6 +333,10 @@ public struct Font {
     }
     
     public static func monospace(_ size: CGFloat) -> UIFont {
+        // AyuGram: custom monospace font (regular weight only)
+        if let name = UserDefaults.standard.string(forKey: "ayu.monoFont"), !name.isEmpty, let font = UIFont(name: name, size: size - 1.0) {
+            return font
+        }
         return UIFont(name: "Menlo-Regular", size: size - 1.0) ?? UIFont.systemFont(ofSize: size)
     }
     

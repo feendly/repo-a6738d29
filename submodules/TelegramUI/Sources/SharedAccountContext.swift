@@ -826,6 +826,8 @@ public final class SharedAccountContextImpl: SharedAccountContext {
                     self.activeAccountsValue!.primary?.account.postbox.clearCaches()
                     self.activeAccountsValue!.primary?.account.resetCachedData()
                     self.activeAccountsValue!.primary = primary
+                    // AyuGram: per-account ghost settings follow the account in front
+                    AyuGramSettings.setActiveAccount(primary?.account.peerId.toInt64() ?? 0)
                 }
                 if self.activeAccountsValue!.currentAuth?.id != authRecord?.0 {
                     hadUpdates = true

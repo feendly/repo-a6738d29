@@ -70,7 +70,9 @@ private enum AyuGramSettingsEntry: ItemListNodeEntry {
             return AyuGramSettingsSection.history.rawValue
         case .otherHeader, .otherToggle, .otherInfo:
             return AyuGramSettingsSection.other.rawValue
-        case .filterHeader, .filterToggle, .filterPattern, .filterAdd, .filterAction, .filterInfo:
+        case let .filterAction(index, _):
+            return index >= 10 ? AyuGramSettingsSection.other.rawValue : AyuGramSettingsSection.filters.rawValue
+        case .filterHeader, .filterToggle, .filterPattern, .filterAdd, .filterInfo:
             return AyuGramSettingsSection.filters.rawValue
         }
     }
@@ -112,7 +114,7 @@ private enum AyuGramSettingsEntry: ItemListNodeEntry {
         case .filterAdd:
             return 2990
         case let .filterAction(index, _):
-            return 2991 + index
+            return index >= 10 ? 3880 + index : 2991 + index
         case .filterInfo:
             return 2999
         }
@@ -308,6 +310,7 @@ private func ayuGramSettingsControllerEntries() -> [AyuGramSettingsEntry] {
         (.sendWithoutSoundInGhost, "Send Silently in Ghost Mode"),
         (.sendWithoutSoundAlways, "Always Send Silently"),
         (.suggestGhostModeBeforeViewingStory, "Offer Ghost Mode Before Viewing Stories"),
+        (.useGlobalGhostMode, "One Ghost Mode for All Accounts"),
         (.lockSendReadMessages, "Lock Read Receipts"),
         (.lockSendReadStories, "Lock Story Views"),
         (.lockSendOnlinePackets, "Lock Online Status"),
@@ -419,6 +422,7 @@ private func ayuGramSettingsControllerEntries() -> [AyuGramSettingsEntry] {
         entries.append(.otherToggle(index, key, title, AyuGramSettings.bool(key)))
         index += 1
     }
+    entries.append(.filterAction(10, "Monospace Font: \(AyuGramSettings.monoFont ?? "Menlo")"))
     entries.append(.otherInfo("Link cleaning only changes text that Telegram recognises as a web link, including links without https, and never Telegram links or code. Strict cleaning follows Link Cleaner and can break links on sites that need their parameters. Local Premium only unlocks features on this device and takes effect after restarting the app. Staying connected in the background uses location access to keep the app running so deleted messages are caught while it is closed; it also takes effect after a restart and uses more battery."))
 
     return entries
@@ -458,6 +462,22 @@ public func ayuGramSettingsController(context: AccountContext) -> ViewController
         bump()
     }, filterAction: { index in
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+        if index == 10 {
+            let controller = promptController(context: context, text: "Monospace Font", subtitle: "Font name, such as Courier or Menlo-Regular. Leave empty for the default. Reopen a chat to see it.", value: AyuGramSettings.monoFont, placeholder: "Menlo-Regular", apply: { value in
+                guard let value = value else {
+                    return
+                }
+                let name = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty && UIFont(name: name, size: 12.0) == nil {
+                    presentControllerImpl?(textAlertController(context: context, title: nil, text: "No font named \"\(name)\" on this device.", actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]))
+                    return
+                }
+                AyuGramSettings.setMonoFont(name)
+                bump()
+            })
+            presentControllerImpl?(controller)
+            return
+        }
         var text: String
         if index == 0 {
             let count = AyuFilters.patterns.count

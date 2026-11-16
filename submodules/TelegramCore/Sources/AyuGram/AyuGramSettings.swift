@@ -94,6 +94,7 @@ public final class AyuGramSettings {
         case improveLinkPreviews
         case quickAdminShortcuts
         case showMessageShotInContextMenu
+        case useGlobalGhostMode
 
         public var defaultValue: Bool {
             switch self {
@@ -157,7 +158,7 @@ public final class AyuGramSettings {
                 return false
             case .showLReadToggleInDrawer, .showStreamerToggleInDrawer:
                 return false
-            case .showSReadToggleInDrawer, .showGhostToggleInDrawer, .suggestGhostModeBeforeViewingStory, .collapseSimilarChannels, .channelBottomButtonDiscuss, .showAiEditorButtonInMessageField, .replaceBottomInfoWithIcons, .quickAdminShortcuts, .showMessageShotInContextMenu:
+            case .showSReadToggleInDrawer, .showGhostToggleInDrawer, .suggestGhostModeBeforeViewingStory, .collapseSimilarChannels, .channelBottomButtonDiscuss, .showAiEditorButtonInMessageField, .replaceBottomInfoWithIcons, .quickAdminShortcuts, .showMessageShotInContextMenu, .useGlobalGhostMode:
                 return true
             case .unlimitedRecentStickers, .showOnlyAddedEmojisAndStickers, .hideFromBlocked, .cleanLinks, .cleanLinksStrict, .hideAllChatsFolder, .spoofWebviewAsAndroid, .channelBottomButtonHidden, .singleCornerRadius, .simpleQuotesAndReplies, .improveLinkPreviews:
                 return false
@@ -171,18 +172,65 @@ public final class AyuGramSettings {
 
     private static let defaults = UserDefaults.standard
 
+    // Ghost settings can be kept per account ("One Ghost Mode for All Accounts" off).
+    // They then follow the account that is in front, the only one that reads chats and goes online.
+    private static let perAccountKeys: Set<BoolKey> = [
+        .sendReadMessages, .sendReadStories, .sendOnlinePackets, .sendUploadProgress, .sendOfflinePacketAfterOnline,
+        .markReadAfterAction, .useScheduledMessages,
+        .lockSendReadMessages, .lockSendReadStories, .lockSendOnlinePackets, .lockSendUploadProgress, .lockSendOfflinePacketAfterOnline
+    ]
+    private static let activeAccountLock = NSLock()
+    private static var activeAccountIdValue: Int64 = 0
+
+    public static func setActiveAccount(_ peerId: Int64) {
+        activeAccountLock.lock()
+        let changed = activeAccountIdValue != peerId
+        activeAccountIdValue = peerId
+        activeAccountLock.unlock()
+        if changed {
+            debugLog("active account=\(peerId) globalGhost=\(bool(.useGlobalGhostMode)) sendRead=\(bool(.sendReadMessages)) sendOnline=\(bool(.sendOnlinePackets))")
+        }
+    }
+
+    private static func effectiveStorageKey(_ key: BoolKey) -> String {
+        if key != .useGlobalGhostMode && perAccountKeys.contains(key) {
+            let isGlobal = (defaults.object(forKey: BoolKey.useGlobalGhostMode.storageKey) as? Bool) ?? BoolKey.useGlobalGhostMode.defaultValue
+            if !isGlobal {
+                activeAccountLock.lock()
+                let accountId = activeAccountIdValue
+                activeAccountLock.unlock()
+                if accountId != 0 {
+                    return "\(key.storageKey).\(accountId)"
+                }
+            }
+        }
+        return key.storageKey
+    }
+
     public static func bool(_ key: BoolKey) -> Bool {
         if let value = overrideValue(key) {
             return value
         }
-        if let value = defaults.object(forKey: key.storageKey) as? Bool {
+        if let value = defaults.object(forKey: effectiveStorageKey(key)) as? Bool {
             return value
         }
         return key.defaultValue
     }
 
     public static func setBool(_ key: BoolKey, _ value: Bool) {
-        defaults.set(value, forKey: key.storageKey)
+        defaults.set(value, forKey: effectiveStorageKey(key))
+    }
+
+    /// Name of the font used for monospace text; nil means the stock Menlo. Display reads the same key.
+    public static var monoFont: String? {
+        if let value = defaults.string(forKey: "ayu.monoFont"), !value.isEmpty {
+            return value
+        }
+        return nil
+    }
+
+    public static func setMonoFont(_ value: String) {
+        defaults.set(value, forKey: "ayu.monoFont")
     }
 
     /// Text shown next to the time of a message the server deleted.
