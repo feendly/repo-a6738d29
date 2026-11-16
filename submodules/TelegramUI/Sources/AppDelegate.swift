@@ -1009,6 +1009,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 if buildConfig.isInternalBuild {
                     icons.append(PresentationAppIcon(name: "WhiteFilledIcon", imageName: "WhiteFilledIcon"))
                 }
+                // AyuGram: the icon set of AyuGram Desktop
+                for ayuIconName in ["AyuDefault", "AyuAlt", "AyuDiscord", "AyuSpotify", "AyuExtera", "AyuNothing", "AyuBard", "AyuYaPlus", "AyuWin95", "AyuChibi", "AyuChibi2", "AyuExtera2"] {
+                    icons.append(PresentationAppIcon(name: ayuIconName, imageName: ayuIconName))
+                }
                 
                 icons.append(PresentationAppIcon(name: "Premium", imageName: "Premium", isPremium: true))
                 icons.append(PresentationAppIcon(name: "PremiumTurbo", imageName: "PremiumTurbo", isPremium: true))

@@ -414,7 +414,13 @@ class ThemeSettingsAppIconItemNode: ListViewItemNode, ItemListItemNode {
                                 case "PremiumTurbo":
                                     name = item.strings.Appearance_AppIconTurbo
                                 default:
-                                    name = icon.name
+                                    // AyuGram icons are named "Ayu<Title>"
+                                    if icon.name.hasPrefix("Ayu") && icon.name.count > 3 {
+                                        name = String(icon.name.dropFirst(3))
+                                        bordered = false
+                                    } else {
+                                        name = icon.name
+                                    }
                             }
                         
                             imageNode.setup(theme: item.theme, icon: image, title: NSAttributedString(string: name, font: selected ? selectedTextFont : textFont, textColor: selected  ? item.theme.list.itemAccentColor : item.theme.list.itemPrimaryTextColor, paragraphAlignment: .center), locked: !item.isPremium && icon.isPremium, color: item.theme.list.itemPrimaryTextColor, bordered: bordered, selected: selected, action: {
