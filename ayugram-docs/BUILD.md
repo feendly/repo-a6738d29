@@ -61,6 +61,13 @@ Inside the app's data container, `tmp/`:
 Screen control: noVNC at `http://192.168.2.22:5801/` in Chrome with
 `&resize=scale`. Switches, context-menu items and alert buttons respond to a
 scripted press of about 150 ms on the noVNC canvas, not to a plain click. `uiopen --url "tg://resolve?domain=<username>"` opens a chat.
+Adding `&text=<url-encoded text>` prefills the draft; typing over VNC drops letters.
+
+If Chrome screenshots of the noVNC tab time out, read the canvas instead: run
+`python F:/ayugram-ios/tmp/shotsrv.py` (listens on 127.0.0.1:8765, saves each POST
+body under `shots/` next to the script) and, in the page, draw the noVNC canvas to a
+1112x834 canvas, `toBlob` it as JPEG and `fetch` it to `http://127.0.0.1:8765/<name>.jpg`.
+That image is in device points, so taps are mapped through the canvas bounding box.
 
 ## Upstream updates
 

@@ -134,6 +134,8 @@ A feature counts as done only when its row says PASS.
 | 109 | Improve link previews (retest) | run 43561780256 | Override on; open the luki chat with the draft prefilled to `https://x.com/jack/status/20`; send | Preview from the mirror, message keeps the x.com link | Log `link preview https://x.com/jack/status/20 -> https://fixupx.com/jack/status/20`; draft and sent message show a FixupX preview under the x.com link | PASS |
 | 110 | Quick admin shortcuts: Administrators | run 43561780256 | Hold the chat avatar in a channel where nash is a subscriber, then in its discussion group | Channel: no extra items; group: Administrators, opening the admin list | Channel shows Open Profile and Search only; group adds Administrators, which opens Chat Admins | PASS |
 | 111 | Quick admin shortcuts: Recent Actions | run 43561780256 | - | Item shown where the account is an admin | Not run: no chat at hand where nash or luki is an admin | NOT RUN |
+| 112 | Ordinary forwarding after the restricted-chat change | run 43790136052 | nash forwards "edi icon test v2" to the luki chat | A normal forward with the "Forwarded from" header | Sent with "Forwarded from nash" | PASS |
+| 113 | Forward from a chat with protected content | run 43790136052 | - | Message goes out as a copy | Not run: no chat with protected content on either account | NOT RUN |
 
 ## Notes
 
@@ -178,3 +180,5 @@ A feature counts as done only when its row says PASS.
 - Rows 98 and 99 (with the user's go-ahead): nash is now a member of Telegram News and has a started Durger King bot chat. The iPad came back in landscape after a battery outage.
 - Row 107 left one message from nash in the luki-nash chat ("edi icon test v2", 1:57 AM November 14). Typing over VNC drops letters when sent quickly.
 - Row 109 left one message from nash in the luki-nash chat (the x.com link, 8:44 PM November 15). `tg://resolve?domain=<username>&text=<encoded text>` prefills a draft, which avoids typing over VNC.
+- Row 112 left one forwarded message from nash in the luki-nash chat (12:09 AM November 16).
+- The iPad was not charging on November 15 and 16 (87% down to 8%); the two drops off the network during a copy were the battery running out, followed by a reboot.
