@@ -211,6 +211,9 @@ func confirmStoredMessages(accountPeerId: PeerId, postbox: Postbox, source: Fetc
 /// Returns the ids it deleted: the private-chat and basic-group ones, then the channel ones, each in the order given.
 @discardableResult
 func deleteStoredMessagesAsReceivedDeletion(transaction: Transaction, mediaBox: MediaBox, ids: [MessageId]) -> [MessageId] {
+    // AyuGram: a message the server no longer has was deleted remotely, as with a received deletion; keep it the
+    // same way (seen with the newest message of a private chat whose history the other side cleared for both).
+    let ids = ayuKeepRemotelyDeletedMessages(transaction: transaction, ids: ids)
     var regularIds: [MessageId] = []
     var channelIds: [MessageId] = []
     for id in ids {

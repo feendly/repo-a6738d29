@@ -175,7 +175,8 @@ public final class ChatEmptyNodeGreetingChatContent: ASDisplayNode, ChatEmptyNod
             customStickerFile = businessIntro.stickerFile
         } else {
             self.titleNode.attributedText = NSAttributedString(string: interfaceState.strings.Conversation_EmptyPlaceholder, font: titleFont, textColor: serviceColor.primaryText)
-            self.textNode.attributedText = NSAttributedString(string: interfaceState.strings.Conversation_GreetingText, font: messageFont, textColor: serviceColor.primaryText)
+            // AyuGram: without the greeting sticker, "tap on the greeting below" would point at nothing.
+            self.textNode.attributedText = NSAttributedString(string: AyuGramSettings.bool(.disableGreetingSticker) ? "" : interfaceState.strings.Conversation_GreetingText, font: messageFont, textColor: serviceColor.primaryText)
         }
         
         let previousCustomStickerFile = self.currentCustomStickerFile
@@ -271,12 +272,21 @@ public final class ChatEmptyNodeGreetingChatContent: ASDisplayNode, ChatEmptyNod
         }
         
         let insets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
-        let titleSpacing: CGFloat = 5.0
-        let stickerSpacing: CGFloat = 5.0
-        
+        var titleSpacing: CGFloat = 5.0
+        var stickerSpacing: CGFloat = 5.0
+
+        // AyuGram: no room left for a greeting sticker that will not be shown.
+        if AyuGramSettings.bool(.disableGreetingSticker) {
+            stickerSize = .zero
+            stickerSpacing = 0.0
+            if (self.textNode.attributedText?.length ?? 0) == 0 {
+                titleSpacing = 0.0
+            }
+        }
+
         var contentWidth: CGFloat = 220.0
         var contentHeight: CGFloat = 0.0
-                
+
         let titleSize = self.titleNode.updateLayout(CGSize(width: contentWidth, height: CGFloat.greatestFiniteMagnitude))
         let textSize = self.textNode.updateLayout(CGSize(width: contentWidth, height: CGFloat.greatestFiniteMagnitude))
         
