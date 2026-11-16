@@ -951,6 +951,19 @@ func _internal_composeAIMessage(account: Account, text: ComposedRichMessage, mod
     
     switch text {
     case .empty, .plain:
+        // AyuGram: the Translate sheet lands here; plain translation can use Google or Yandex instead
+        let ayuProvider = AyuTranslator.provider
+        if case let .plain(ayuPlainText, _) = text, let ayuToLang = translateToLang, ayuProvider != .telegram, changeTone == nil, flags == (1 << 1), !ayuPlainText.isEmpty {
+            return AyuTranslator.translate(provider: ayuProvider, text: ayuPlainText, toLang: ayuToLang)
+            |> castError(TelegramAIComposeMessageError.self)
+            |> mapToSignal { result -> Signal<TelegramAIComposeMessageResult, TelegramAIComposeMessageError> in
+                if let result = result {
+                    return .single(TelegramAIComposeMessageResult(text: .plain(text: result, entities: []), diffRanges: []))
+                } else {
+                    return .fail(.generic)
+                }
+            }
+        }
         let inputText: Api.TextWithEntities
         if case let .plain(text, entities) = text {
             inputText = .textWithEntities(Api.TextWithEntities.Cons_textWithEntities(text: text, entities: apiEntitiesFromMessageTextEntities(entities, associatedPeers: SimpleDictionary())))
