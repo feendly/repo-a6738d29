@@ -107,15 +107,20 @@ public func openUserGeneratedUrl(
     // A login part hides the host the link opens (see `externalUrlWithLoginPart`).
     let loginPartUrl = externalUrlWithLoginPart(url)
 
+    // AyuGram: optionally skip the prompt for an ordinary hidden link. Links with a login part, proxy links and
+    // callers that force the prompt still ask.
+    var ayuSkipConcealedAlert = concealed && !forceConcealed && loginPartUrl == nil && AyuGramSettings.bool(.disableOpenLinkWarning)
+
     if forceConcealed || loginPartUrl != nil {
         concealed = true
     } else if let parsedUrl = parseInternalUrl(sharedContext: context.sharedContext, context: context, query: url) {
         if case .proxy = parsedUrl {
             concealed = true
+            ayuSkipConcealedAlert = false
         }
     }
 
-    if concealed && !skipConcealedAlert {
+    if concealed && !skipConcealedAlert && !ayuSkipConcealedAlert {
         // For a login part the prompt shows the host the link really opens. The external-URL opener asks about such
         // a link as well, so accepting it here tells the opener it has been confirmed.
         let displayUrl = loginPartUrl.map { urlRemovingLoginPart($0).absoluteString } ?? parsedString

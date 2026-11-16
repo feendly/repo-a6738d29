@@ -3981,6 +3981,33 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 })))
             }
             
+            // AyuGram: quick admin shortcuts. A forum shows this menu in place of the avatar menu that carries
+            // them in other chats.
+            if AyuGramSettings.bool(.quickAdminShortcuts) {
+                if channel.flags.contains(.isCreator) || channel.adminRights != nil {
+                    items.append(.action(ContextMenuActionItem(text: strings.Group_Info_AdminLog, icon: { theme in
+                        return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/List"), color: theme.contextMenu.primaryColor)
+                    }, action: { [weak sourceController] _, f in
+                        f(.default)
+                        guard let sourceController = sourceController else {
+                            return
+                        }
+                        sourceController.view.endEditing(true)
+                        (sourceController.navigationController as? NavigationController)?.pushViewController(context.sharedContext.makeChatRecentActionsController(context: context, peer: .channel(channel), adminPeerId: nil, starsState: nil))
+                    })))
+                }
+                items.append(.action(ContextMenuActionItem(text: strings.GroupInfo_Administrators, icon: { theme in
+                    return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Promote"), color: theme.contextMenu.primaryColor)
+                }, action: { [weak sourceController] _, f in
+                    f(.default)
+                    guard let sourceController = sourceController else {
+                        return
+                    }
+                    sourceController.view.endEditing(true)
+                    (sourceController.navigationController as? NavigationController)?.pushViewController(channelAdminsController(context: context, peerId: channel.id))
+                })))
+            }
+
             var needsSeparatorForCreateTopic = true
             if let sourceController = sourceController as? ChatController {
                 items.append(.separator)
