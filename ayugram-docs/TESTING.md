@@ -150,6 +150,11 @@ A feature counts as done only when its row says PASS.
 | 125 | Monospace font reset | run 43820003583 | After the app restart, look at "mono test 123" | Back to Menlo | Menlo | PASS |
 | 126 | Translator: Google | run 43827376720 | Translator row on Google; hold a Russian post, Translate | Translation shown; request to Google in the log | "legend"; log `translate provider=google to=en status=200 ok=true` | PASS |
 | 127 | Translator: Yandex | run 43827376720 | Translator row on Yandex; same post | Translation shown; request to Yandex in the log | "legend"; log `translate provider=yandex to=en status=200 ok=true` | PASS |
+| 128 | Skip hidden link warning | run 43827376720 | nash sends a message whose word "hiddenlink" links to example.org (Format, Link); tap it with the switch off, then on | Off: "Open link?". On: opens at once | Off: prompt shown. On: prompt still shown. The switch only covered links in profiles; fixed in the next build | FAIL, retest |
+| 129 | Forward as copy from a restricted group | run 43827376720 | nash creates the group "ayu admin test" with luki and turns on Restrict Saving Content; "Allow Copy and Save in Restricted Chats" on; hold a message | Copy and Forward in the menu; the forward arrives as a plain copy | Both items shown; "restricted forward test" arrived in the luki chat with no "Forwarded from" header | PASS |
+| 130 | Restricted chat hidden from screen capture | run 43827376720 | Same group, look at it over VNC with the switch off, then on | Off: messages hidden from the capture (stock protection). On: visible | Off: the chat looked empty over VNC. On: messages visible | PASS |
+| 131 | Round avatars for forums | run 43827376720 | Turn on Topics in the same group; switch off, then on and restart the app | Off: rounded square. On: round | Off: rounded square. On, after restart: round | PASS |
+| 132 | Quick admin shortcuts in a forum | run 43827376720 | Hold the top-right button of the same group (topics on, nash is owner) | Recent Actions and Administrators | Stock forum menu only (View as Topics, Group Info, Add Members, Search, New Topic). Added to that menu in the next build | FAIL, retest |
 
 ## Notes
 
@@ -208,3 +213,6 @@ A feature counts as done only when its row says PASS.
 - Rows 126 and 127: the translator row was set back to Telegram afterwards. The post text was sent to Google and to Yandex once each.
 - November 16, 5:21 AM: nash set and then reset a chat theme in the luki-nash chat to try "Ignore Per-Chat Backgrounds"; two service messages remain ("changed the chat theme", "disabled the chat theme").
 - luki tapped "Disable Sharing" for the nash chat to make a protected chat for the forward-as-copy test; it only opened the Telegram Premium page, nothing was changed.
+- November 16, about 6 PM: the Chrome extension was not connected, so the iPad was driven with `F:yugram-ios	mpnc.py`, a small VNC client (no password is set on TrollVNC). See BUILD.md.
+- Rows 128 to 132 left on nash's account: the group "ayu admin test" (nash and luki, Restrict Saving Content on, Topics on, two test messages) and, in the luki chat, "hiddenlink test" and "restricted forward test".
+- While looking for an empty chat and a group, nash's view opened the Pavel Durov channel, the Telegram Usernames channel (not joined) and, by a mis-tap after the chat list reordered, "uicache chat". Nothing was sent in any of them.

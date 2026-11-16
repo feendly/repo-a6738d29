@@ -1,7 +1,7 @@
 # AyuGram for iOS: feature status
 
 One row per AyuGram Desktop setting or feature (source: `ayu/ayu_settings.h`
-and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43827376720 installed).
+and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-16 (run 43827376720 installed).
 
 Status values:
 
@@ -16,9 +16,9 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 75 |
+| TESTED | 77 |
 | LOG ONLY | 5 |
-| UNTESTED | 17 |
+| UNTESTED | 15 |
 | TODO | 0 |
 | N/A | 14 |
 
@@ -79,7 +79,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | Filtered/hidden messages in chat list preview | - | TESTED | Shows "Filtered message" |
 | disableStories | off | UNTESTED | Switch on; no stories were available to compare (tried again on November 16: none in nash's chat list with the switch off either) |
 | disableCustomBackgrounds | off | UNTESTED | Ignores a photo wallpaper set for one chat, as on desktop; chat themes are left alone (seen November 16: a chat theme stayed with the switch on, which matches desktop). NEEDS THE USER: setting a photo wallpaper needs Photos access |
-| disableOpenLinkWarning | off | UNTESTED | Needs a message with a hidden link. The iOS message field does not turn `[text](url)` into a hidden link, so the test accounts could not make one from a prefilled draft |
+| disableOpenLinkWarning | off | UNTESTED | Failed on run 43827376720: the switch only covered links in profiles, and a hidden link in a chat still asked (TESTING row 128). Fixed for links in chats in run 43961878070, to be retested. A hidden link can be made with Format, Link on selected text |
 | disableNotificationsDelay | off | N/A | Desktop delays its own notifications while another device is online; iOS notifications come from Apple's push service and have no such delay to remove |
 | disableGreetingSticker | off | UNTESTED | Run 43002933120 |
 | hidePremiumStatuses | off | TESTED | Chat list only: the status icon next to a contact's name disappears |
@@ -108,7 +108,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | messageBubbleRadius | 16 | N/A | Stock setting exists: Appearance, Message Corners |
 | removeMessageTail | off | TESTED | |
 | avatarCorners | 23 | TESTED | On/off switch for rounded squares, not a radius slider; restart to apply |
-| singleCornerRadius | off | UNTESTED | "Round Avatars for Forums Too": forum chats use the same avatar shape as other chats. No forum chat at hand to look at |
+| singleCornerRadius | off | TESTED | "Round Avatars for Forums Too": forum chats use the same avatar shape as other chats; restart to apply (TESTING row 131) |
 | materialSwitches | on | N/A | iOS uses system switches |
 | simpleQuotesAndReplies | off | TESTED | Reply, quote and link preview blocks lose the fill and emoji pattern; the side line stays (run 43536445199, checked on a link preview) |
 | replaceBottomInfoWithIcons | on | TESTED | "Icons Instead of Edited and Deleted Marks": a pencil glyph for edited and a bin glyph for deleted next to the time, overriding the custom marks. Text glyphs, not drawn icons as on desktop (run 43556106622) |
@@ -123,7 +123,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | hideNotificationBadge | off | UNTESTED | The home screen cannot be reached over VNC; needs a look at the app icon on the iPad itself |
 | hideAllChatsFolder | off | TESTED | Hides the All Chats tab when there is at least one folder and starts on the first folder. The All Chats list stays reachable from the Chats tab long-press menu (no tab is highlighted then); swiping does not reach it |
 | channelBottomButton | Discuss | TESTED | Two switches: "Discuss Instead of Mute" (on by default; only for channels with a discussion group, others keep Mute) and "Hide". Discuss opens the linked group (run 43527721168) |
-| quickAdminShortcuts | on | TESTED | Recent Actions (admins) and Administrators (group members, channel admins) in the menu shown by holding the chat avatar; desktop has top-bar buttons. Administrators seen working (run 43561780256); Recent Actions not seen, no chat at hand where the account is an admin |
+| quickAdminShortcuts | on | TESTED | Recent Actions (admins) and Administrators (group members, channel admins) in the menu shown by holding the chat avatar; desktop has top-bar buttons. Administrators seen working (run 43561780256); Recent Actions not seen yet: a basic group has neither item, and a group with topics shows its own top-right menu, which gets both items from run 43961878070 (TESTING row 132, to be retested) |
 
 ## Message field buttons
 
@@ -168,7 +168,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | AyuGram settings screen | TESTED | Ghost, history, filters and other sections; Add Filter prompt works |
 | Streamer mode | TESTED | Hides own phone number in Settings only (run 43084196247) |
 | Message shot (messages as image) | TESTED | "Message Shot" in the message menu renders the message (or the selected messages on screen) into one image and opens the share sheet. Desktop's theme and layout options are not ported. Run 43814121847; the image itself was not opened, only its size in the log |
-| Forward without author / from restricted chats / repeat message | UNTESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages), TESTED in row 122. With "Allow Copy and Save in Restricted Chats" on, Forward shows in chats with protected content and the message goes out as a copy (text plus the first photo or file, by reference, no re-upload; albums are not kept together). No restricted chat at hand to try it. NEEDS THE USER: "Disable Sharing" in a private chat would give a test case, but it is a Telegram Premium feature, which neither test account has |
+| Forward without author / from restricted chats / repeat message | TESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages). With "Allow Copy and Save in Restricted Chats" on, Copy and Forward show in chats with protected content and the message goes out as a copy; a text message from a restricted group arrived with no "Forwarded from" header (TESTING row 129). The switch also lifts the screen-capture protection of such chats (row 130). Photos and files are sent by reference, no re-upload, and albums are not kept together; neither was tried |
 | Translator providers (Telegram, Google, Yandex, native) | TESTED | "Translator" row in the Other section cycles Telegram, Google, Yandex. Google and Yandex use desktop's endpoints for the Translate action; plain text only (formatting is dropped), and chat-wide auto-translate stays on Telegram. No separate "native" provider. Run 43827376720 |
 | Webview options (spoof Android, larger size) | TESTED | "Report Android to Mini Apps" TESTED by log (the mini app address from the server says ios with it off and android with it on). The two size options resize the desktop mini app window and have no iOS equivalent |
 | `tg://ayu` settings links | TESTED | `tg://ayusettings` opens the AyuGram screen |

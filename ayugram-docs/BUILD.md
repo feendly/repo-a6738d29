@@ -69,6 +69,14 @@ body under `shots/` next to the script) and, in the page, draw the noVNC canvas 
 1112x834 canvas, `toBlob` it as JPEG and `fetch` it to `http://127.0.0.1:8765/<name>.jpg`.
 That image is in device points, so taps are mapped through the canvas bounding box.
 
+Without Chrome: `python F:/ayugram-ios/tmp/vnc.py` talks to TrollVNC directly (port 5901, no password).
+`shot out.png` saves the screen at one pixel per point; `tap X Y [ms]`, `drag X1 Y1 X2 Y2 [ms]`, `type text` and
+`wait s` take points from that image; chain commands with `--`. Run `python -u vnc.py serve` in the background
+first: every new VNC connection raises a banner on the iPad that covers the top of the screen for a few seconds,
+and with the server running the other invocations reuse its connection. Typing through it is reliable. A chat with
+protected content looks empty in these captures unless "Allow Copy and Save in Restricted Chats" is on. The chat
+list reorders when messages arrive, so capture right before tapping a row.
+
 ## Upstream updates
 
 The repository starts from a history-free snapshot of
