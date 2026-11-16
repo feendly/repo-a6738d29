@@ -206,3 +206,5 @@ A feature counts as done only when its row says PASS.
 - The settings screen opens either next to the chat list or full width, so row positions differ between openings; take a capture before tapping.
 - Row 122 and the hidden-link attempt left two messages from nash in the luki-nash chat (both "[hidden link](https://example.com)", 3:57 AM November 16).
 - Rows 126 and 127: the translator row was set back to Telegram afterwards. The post text was sent to Google and to Yandex once each.
+- November 16, 5:21 AM: nash set and then reset a chat theme in the luki-nash chat to try "Ignore Per-Chat Backgrounds"; two service messages remain ("changed the chat theme", "disabled the chat theme").
+- luki tapped "Disable Sharing" for the nash chat to make a protected chat for the forward-as-copy test; it only opened the Telegram Premium page, nothing was changed.
