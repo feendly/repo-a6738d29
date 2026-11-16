@@ -140,6 +140,10 @@ A feature counts as done only when its row says PASS.
 | 115 | Per-chat filter | run 43806809468 | Filters on (override); as nash in the luki chat hold the photo message, "Add to Filters for This Chat" | Message hidden; entry `chat:<id>:...` in settings | Hidden at once, chat list shows "Filtered message", entry `chat:38033187551:Placeholders for App Updates...` listed | PASS |
 | 116 | Filter export and import | run 43806809468 | Settings: Copy Filters to Clipboard; remove the chat entry; Import Filters from Clipboard | "2 filters copied", then "1 filter added" and the entry is back | As expected | PASS |
 | 117 | View-once media kept | run 43806809468 | luki records a view-once voice message for nash | - | Not run: iOS asked for microphone access, which was declined rather than granted over VNC | NOT RUN, needs the user |
+| 118 | Message shot | run 43814121847 | As nash hold "edi icon test v2" in the luki chat, Message Shot | Share sheet with an image of the message | Share sheet opened (Copy, Save Image, ...); log `message shot: messages=1 size=514x141`. The image was not opened | PASS |
+| 119 | Per-account ghost mode | run 43814121847 | Turn "One Ghost Mode for All Accounts" off; as nash turn Send Read Receipts off; switch to luki and back | Each account keeps its own value | Log on each switch: luki `sendRead=true`, nash `sendRead=false`, `globalGhost=false`. Restored afterwards: nash read receipts on, the switch back on, global values unchanged (read on, online off, typing off) | PASS |
+| 120 | Monospace font | run 43814121847 | Set "Monospace Font" to Courier; send `mono test 123` as code to luki | Code text in Courier | Row shows "Monospace Font: Courier"; the message renders in Courier. Reset to the default afterwards | PASS |
+| 121 | Translator: Google | run 43814121847 | Translator row to Google; hold a Russian post, Translate | Request to Google in the log | Translation shown, but no request in the log: the Translate sheet uses the AI compose call, which was not hooked. Hooked in the next build | FAIL, retest |
 
 ## Notes
 
@@ -190,3 +194,7 @@ A feature counts as done only when its row says PASS.
 - Row 116 replaced the iPad clipboard with the filter list. The test chat filter was removed afterwards; the existing "Lazy" filter was left alone.
 - Row 117: the microphone prompt for AyuGram was answered "Don't Allow". To allow it later: iPad Settings, AyuGram, Microphone.
 - The iPad was in portrait from 2:23 AM November 16; screen captures are then 834x1112.
+- Row 120 left one message from nash in the luki-nash chat ("mono test 123", 3:25 AM November 16).
+- Row 119: while the switch was off (about a minute) nash and luki used the per-account defaults, so online and typing status were sent for that minute.
+- Tapping the on-screen keyboard keys over VNC types reliably; typing through the VNC keyboard does not.
+- The settings screen opens either next to the chat list or full width, so row positions differ between openings; take a capture before tapping.

@@ -1,7 +1,7 @@
 # AyuGram for iOS: feature status
 
 One row per AyuGram Desktop setting or feature (source: `ayu/ayu_settings.h`
-and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43806809468 installed).
+and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43814121847 installed).
 
 Status values:
 
@@ -16,9 +16,9 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 69 |
+| TESTED | 72 |
 | LOG ONLY | 5 |
-| UNTESTED | 23 |
+| UNTESTED | 20 |
 | TODO | 0 |
 | N/A | 14 |
 
@@ -39,7 +39,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | sendWithoutSound | Never | UNTESTED | Two switches: always, or only in ghost mode. Not observable from the sender's side |
 | suggestGhostModeBeforeViewingStory | on | UNTESTED | Prompt when opening someone's stories from the chat list (run 43349311751). Ghost Mode stays on afterwards; desktop turns it off again when the story closes. Stories opened from a profile or a chat avatar are not covered |
 | Per-setting "locked" flags (5) | off | TESTED | Five Lock switches. With Read Receipts locked, switching Ghost Mode on and off left it alone and changed the other four |
-| useGlobalGhostMode (per-account ghost) | on | UNTESTED | "One Ghost Mode for All Accounts". Off: ghost switches and their locks are stored per account and follow the account in front (the only one that reads chats and goes online) |
+| useGlobalGhostMode (per-account ghost) | on | TESTED | "One Ghost Mode for All Accounts". Off: ghost switches and their locks are stored per account and follow the account in front (the only one that reads chats and goes online). Run 43814121847 |
 | "Read message" context action | - | TESTED | "Send Read Receipt" in the long-press menu; nash saw two ticks (run 43002933120) |
 
 ## Message history
@@ -104,7 +104,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | showMessageSeconds | off | TESTED | |
 | showPeerId | Bot API | TESTED | ID row in user profiles; on/off only |
 | appIcon | default | UNTESTED | The 12 AyuGram Desktop icons (Default, Alt, Discord, Spotify, Extera, Nothing, Bard, YaPlus, Win95, Chibi, Chibi2, Extera2) are in the stock picker, Settings, Appearance, App Icon. Converted from the round desktop artwork and filled to a square with the edge colour |
-| monoFont / main font | system | UNTESTED | "Monospace Font" row takes a font name; regular weight only (bold and italic monospace stay Menlo). Desktop has no separate main-font setting |
+| monoFont / main font | system | TESTED | "Monospace Font" row takes a font name; regular weight only (bold and italic monospace stay Menlo). Desktop has no separate main-font setting. Run 43814121847 |
 | messageBubbleRadius | 16 | N/A | Stock setting exists: Appearance, Message Corners |
 | removeMessageTail | off | TESTED | |
 | avatarCorners | 23 | TESTED | On/off switch for rounded squares, not a radius slider; restart to apply |
@@ -167,7 +167,7 @@ Some rows group several related desktop settings, so the row count is lower than
 |---|---|---|
 | AyuGram settings screen | TESTED | Ghost, history, filters and other sections; Add Filter prompt works |
 | Streamer mode | TESTED | Hides own phone number in Settings only (run 43084196247) |
-| Message shot (messages as image) | UNTESTED | "Message Shot" in the message menu renders the message (or the selected messages on screen) into one image and opens the share sheet. Desktop's theme and layout options are not ported |
+| Message shot (messages as image) | TESTED | "Message Shot" in the message menu renders the message (or the selected messages on screen) into one image and opens the share sheet. Desktop's theme and layout options are not ported. Run 43814121847; the image itself was not opened, only its size in the log |
 | Forward without author / from restricted chats / repeat message | UNTESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages). With "Allow Copy and Save in Restricted Chats" on, Forward shows in chats with protected content and the message goes out as a copy (text plus the first photo or file, by reference, no re-upload; albums are not kept together). No restricted chat at hand to try it |
 | Translator providers (Telegram, Google, Yandex, native) | UNTESTED | "Translator" row in the Other section cycles Telegram, Google, Yandex. Google and Yandex use desktop's endpoints for the Translate action; plain text only (formatting is dropped), and chat-wide auto-translate stays on Telegram. No separate "native" provider: iOS has none to call |
 | Webview options (spoof Android, larger size) | TESTED | "Report Android to Mini Apps" TESTED by log (the mini app address from the server says ios with it off and android with it on). The two size options resize the desktop mini app window and have no iOS equivalent |
