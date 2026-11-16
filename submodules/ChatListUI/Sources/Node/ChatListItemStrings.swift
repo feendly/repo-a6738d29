@@ -89,7 +89,7 @@ public func chatListItemStrings(strings: PresentationStrings, nameDisplayOrder: 
         return (nil, false, restrictionReason, [], nil, nil, nil)
     }
     // AyuGram: filtered or locally hidden messages do not show in the chat list preview
-    if let ayuMessage = message, AyuMessagesStore.shared.isHidden(ayuMessage.id) || AyuFilters.shouldHide(text: ayuMessage.text, isIncoming: ayuMessage.flags.contains(.Incoming), isPrivateChat: ayuMessage.id.peerId.namespace == Namespaces.Peer.CloudUser) {
+    if let ayuMessage = message, AyuMessagesStore.shared.isHidden(ayuMessage.id) || AyuFilters.shouldHide(text: ayuMessage.text, isIncoming: ayuMessage.flags.contains(.Incoming), isPrivateChat: ayuMessage.id.peerId.namespace == Namespaces.Peer.CloudUser, peerId: ayuMessage.id.peerId.toInt64()) {
         return (nil, false, "Filtered message", [], nil, nil, nil)
     }
     // AyuGram: shadow-banned users do not show in the chat list preview either

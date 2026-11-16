@@ -1441,6 +1441,19 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
                 }
             })))
+            let ayuFilterPeerId = message.id.peerId.toInt64()
+            actions.append(.action(ContextMenuActionItem(text: "Add to Filters for This Chat", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/TagFilter"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.default)
+                var patterns = AyuFilters.patterns
+                let pattern = AyuFilters.chatEntry(peerId: ayuFilterPeerId, pattern: NSRegularExpression.escapedPattern(for: ayuFilterText))
+                if !patterns.contains(pattern) {
+                    patterns.append(pattern)
+                    AyuFilters.setPatterns(patterns)
+                    let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
+                }
+            })))
         }
 
         // AyuGram: shadow ban the author (their messages are hidden in groups on this device)

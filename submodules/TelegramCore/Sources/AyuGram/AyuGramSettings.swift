@@ -399,7 +399,15 @@ public final class AyuFilters {
     private static var cachedPatterns: [String]?
     private static var cachedRegexes: [NSRegularExpression] = []
     private static var cachedUserIds = Set<Int64>()
+    private static var cachedChatRegexes: [Int64: [NSRegularExpression]] = [:]
     private static let storageKey = "ayu.filters"
+
+    /// Entries of the form "chat:<peer id>:<pattern>" apply in that chat only.
+    public static let chatPrefix = "chat:"
+
+    public static func chatEntry(peerId: Int64, pattern: String) -> String {
+        return "\(chatPrefix)\(peerId):\(pattern)"
+    }
 
     /// Entries of the form "user:<id>" are shadow bans, not text patterns.
     public static let userPrefix = "user:"
@@ -413,10 +421,21 @@ public final class AyuFilters {
         cachedPatterns = current
         var regexes: [NSRegularExpression] = []
         var userIds = Set<Int64>()
+        var chatRegexes: [Int64: [NSRegularExpression]] = [:]
         for pattern in current {
             if pattern.hasPrefix(userPrefix) {
                 if let id = Int64(pattern.dropFirst(userPrefix.count)) {
                     userIds.insert(id)
+                }
+                continue
+            }
+            if pattern.hasPrefix(chatPrefix) {
+                let rest = pattern.dropFirst(chatPrefix.count)
+                if let separator = rest.firstIndex(of: ":"), let peerId = Int64(rest[rest.startIndex ..< separator]) {
+                    let chatPattern = String(rest[rest.index(after: separator)...])
+                    if let regex = try? NSRegularExpression(pattern: chatPattern, options: [.caseInsensitive]) {
+                        chatRegexes[peerId, default: []].append(regex)
+                    }
                 }
                 continue
             }
@@ -426,6 +445,7 @@ public final class AyuFilters {
         }
         cachedRegexes = regexes
         cachedUserIds = userIds
+        cachedChatRegexes = chatRegexes
     }
 
     /// Shadow ban: messages from these users are hidden in groups and channels.
@@ -487,13 +507,57 @@ public final class AyuFilters {
         lock.unlock()
     }
 
-    public static func matches(_ text: String) -> Bool {
+    /// The filter list as text that can be pasted into another install.
+    public static func exportString() -> String {
+        let object: [String: Any] = ["version": 1, "filters": patterns]
+        if let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted]), let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        return patterns.joined(separator: "\n")
+    }
+
+    /// Merges filters from exported text (or one pattern per line). Returns how many were added, nil if nothing usable was found.
+    public static func importString(_ string: String) -> Int? {
+        var incoming: [String] = []
+        if let data = string.data(using: .utf8), let object = try? JSONSerialization.jsonObject(with: data, options: []) {
+            if let dict = object as? [String: Any], let list = dict["filters"] as? [String] {
+                incoming = list
+            } else if let list = object as? [String] {
+                incoming = list
+            } else {
+                return nil
+            }
+        } else {
+            incoming = string.components(separatedBy: .newlines)
+        }
+        incoming = incoming.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty && $0.count <= 500 }
+        if incoming.isEmpty {
+            return nil
+        }
+        var current = patterns
+        var added = 0
+        for pattern in incoming {
+            if !current.contains(pattern) {
+                current.append(pattern)
+                added += 1
+            }
+        }
+        if added != 0 {
+            setPatterns(current)
+        }
+        return added
+    }
+
+    public static func matches(_ text: String, peerId: Int64 = 0) -> Bool {
         if text.isEmpty {
             return false
         }
         lock.lock()
         rebuildCacheIfNeeded()
-        let regexes = cachedRegexes
+        var regexes = cachedRegexes
+        if peerId != 0, let chatRegexes = cachedChatRegexes[peerId] {
+            regexes.append(contentsOf: chatRegexes)
+        }
         lock.unlock()
         let range = NSRange(text.startIndex..., in: text)
         for regex in regexes {
@@ -518,7 +582,7 @@ public final class AyuFilters {
         return combining >= 12 && combining * 3 >= total
     }
 
-    public static func shouldHide(text: String, isIncoming: Bool, isPrivateChat: Bool) -> Bool {
+    public static func shouldHide(text: String, isIncoming: Bool, isPrivateChat: Bool, peerId: Int64 = 0) -> Bool {
         if !isIncoming || !AyuGramSettings.bool(.filtersEnabled) {
             return false
         }
@@ -528,6 +592,6 @@ public final class AyuFilters {
         if AyuGramSettings.bool(.filterZalgo) && isZalgo(text) {
             return true
         }
-        return matches(text)
+        return matches(text, peerId: peerId)
     }
 }

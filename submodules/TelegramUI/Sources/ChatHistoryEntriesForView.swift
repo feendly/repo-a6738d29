@@ -205,7 +205,7 @@ func chatHistoryEntriesForView(
             continue
         }
         // AyuGram: message filters
-        if AyuFilters.shouldHide(text: message.text, isIncoming: message.flags.contains(.Incoming), isPrivateChat: message.id.peerId.namespace == Namespaces.Peer.CloudUser) {
+        if AyuFilters.shouldHide(text: message.text, isIncoming: message.flags.contains(.Incoming), isPrivateChat: message.id.peerId.namespace == Namespaces.Peer.CloudUser, peerId: message.id.peerId.toInt64()) {
             continue
         }
         // AyuGram: shadow-banned users are hidden in groups and channels

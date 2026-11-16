@@ -16,14 +16,16 @@ private final class AyuGramSettingsControllerArguments {
     let toggle: (AyuGramSettings.BoolKey, Bool) -> Void
     let addFilter: () -> Void
     let removeFilter: (String) -> Void
+    let filterAction: (Int32) -> Void
     let editDeletedMark: () -> Void
     let editEditedMark: () -> Void
 
-    init(toggleGhostMode: @escaping (Bool) -> Void, toggle: @escaping (AyuGramSettings.BoolKey, Bool) -> Void, addFilter: @escaping () -> Void, removeFilter: @escaping (String) -> Void, editDeletedMark: @escaping () -> Void, editEditedMark: @escaping () -> Void) {
+    init(toggleGhostMode: @escaping (Bool) -> Void, toggle: @escaping (AyuGramSettings.BoolKey, Bool) -> Void, addFilter: @escaping () -> Void, removeFilter: @escaping (String) -> Void, filterAction: @escaping (Int32) -> Void, editDeletedMark: @escaping () -> Void, editEditedMark: @escaping () -> Void) {
         self.toggleGhostMode = toggleGhostMode
         self.toggle = toggle
         self.addFilter = addFilter
         self.removeFilter = removeFilter
+        self.filterAction = filterAction
         self.editDeletedMark = editDeletedMark
         self.editEditedMark = editEditedMark
     }
@@ -55,6 +57,7 @@ private enum AyuGramSettingsEntry: ItemListNodeEntry {
     case filterToggle(Int32, AyuGramSettings.BoolKey, String, Bool)
     case filterPattern(Int32, String)
     case filterAdd(String)
+    case filterAction(Int32, String)
     case filterInfo(String)
 
     var section: ItemListSectionId {
@@ -67,7 +70,7 @@ private enum AyuGramSettingsEntry: ItemListNodeEntry {
             return AyuGramSettingsSection.history.rawValue
         case .otherHeader, .otherToggle, .otherInfo:
             return AyuGramSettingsSection.other.rawValue
-        case .filterHeader, .filterToggle, .filterPattern, .filterAdd, .filterInfo:
+        case .filterHeader, .filterToggle, .filterPattern, .filterAdd, .filterAction, .filterInfo:
             return AyuGramSettingsSection.filters.rawValue
         }
     }
@@ -107,7 +110,9 @@ private enum AyuGramSettingsEntry: ItemListNodeEntry {
         case let .filterPattern(index, _):
             return 2960 + index
         case .filterAdd:
-            return 2998
+            return 2990
+        case let .filterAction(index, _):
+            return 2991 + index
         case .filterInfo:
             return 2999
         }
@@ -217,6 +222,12 @@ private enum AyuGramSettingsEntry: ItemListNodeEntry {
             } else {
                 return false
             }
+        case let .filterAction(index, text):
+            if case .filterAction(index, text) = rhs {
+                return true
+            } else {
+                return false
+            }
         case let .filterInfo(text):
             if case .filterInfo(text) = rhs {
                 return true
@@ -262,6 +273,10 @@ private enum AyuGramSettingsEntry: ItemListNodeEntry {
         case let .filterAdd(text):
             return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: text, kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: {
                 arguments.addFilter()
+            })
+        case let .filterAction(index, text):
+            return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: text, kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: {
+                arguments.filterAction(index)
             })
         case let .historyHeader(text), let .otherHeader(text), let .filterHeader(text):
             return ItemListSectionHeaderItem(presentationData: presentationData, text: text, sectionId: self.section)
@@ -332,7 +347,9 @@ private func ayuGramSettingsControllerEntries() -> [AyuGramSettingsEntry] {
         filterIndex += 1
     }
     entries.append(.filterAdd("Add Filter"))
-    entries.append(.filterInfo("Incoming messages matching any filter (regular expression, case-insensitive) are hidden. Entries like user:123 are shadow bans (added from the message menu in groups): that user's messages are hidden in groups. Tap an entry to remove it."))
+    entries.append(.filterAction(0, "Copy Filters to Clipboard"))
+    entries.append(.filterAction(1, "Import Filters from Clipboard"))
+    entries.append(.filterInfo("Incoming messages matching any filter (regular expression, case-insensitive) are hidden. Entries like chat:<id>:<pattern> apply in one chat (added from the message menu). Entries like user:123 are shadow bans (added from the message menu in groups): that user's messages are hidden in groups. Tap an entry to remove it."))
 
     entries.append(.otherHeader("OTHER"))
     let otherToggles: [(AyuGramSettings.BoolKey, String)] = [
@@ -438,6 +455,22 @@ public func ayuGramSettingsController(context: AccountContext) -> ViewController
     }, removeFilter: { pattern in
         AyuFilters.setPatterns(AyuFilters.patterns.filter { $0 != pattern })
         bump()
+    }, filterAction: { index in
+        let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+        var text: String
+        if index == 0 {
+            let count = AyuFilters.patterns.count
+            UIPasteboard.general.string = AyuFilters.exportString()
+            text = count == 1 ? "1 filter copied." : "\(count) filters copied."
+        } else {
+            if let string = UIPasteboard.general.string, let added = AyuFilters.importString(string) {
+                text = added == 1 ? "1 filter added." : "\(added) filters added."
+                bump()
+            } else {
+                text = "The clipboard has no filter list."
+            }
+        }
+        presentControllerImpl?(textAlertController(context: context, title: nil, text: text, actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]))
     }, editDeletedMark: {
         let controller = promptController(context: context, text: "Deleted Mark", subtitle: "Shown next to the time of deleted messages. Leave empty for the default.", value: AyuGramSettings.deletedMark, placeholder: "mark", apply: { value in
             guard let value = value else {
