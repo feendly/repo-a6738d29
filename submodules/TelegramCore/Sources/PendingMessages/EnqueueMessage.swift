@@ -709,9 +709,32 @@ func opportunisticallyTransformMessageWithMedia(network: Network, postbox: Postb
     |> timeout(2.0, queue: Queue.concurrentDefaultQueue(), alternate: .single(nil))
 }
 
+private func ayuIsForwardRestricted(transaction: Transaction, message: Message) -> Bool {
+    if !AyuGramSettings.bool(.allowSavingRestrictedContent) {
+        return false
+    }
+    if message.id.namespace != Namespaces.Message.Cloud {
+        return false
+    }
+    if message.flags.contains(.CopyProtected) {
+        return true
+    }
+    let peer = transaction.getPeer(message.id.peerId)
+    if let group = peer as? TelegramGroup, group.flags.contains(.copyProtectionEnabled) {
+        return true
+    }
+    if let channel = peer as? TelegramChannel, channel.flags.contains(.copyProtectionEnabled) {
+        return true
+    }
+    return false
+}
+
 private func forwardedMessageToBeReuploaded(transaction: Transaction, id: MessageId) -> Message? {
     if let message = transaction.getMessage(id) {
         if message.id.namespace != Namespaces.Message.Cloud && !Namespaces.Message.allEphemeral.contains(message.id.namespace) {
+            return message
+        } else if ayuIsForwardRestricted(transaction: transaction, message: message) {
+            // AyuGram: the server refuses to forward from chats with protected content; send a copy instead
             return message
         } else {
             return nil
@@ -1024,6 +1047,12 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                         if let media = sourceMessage.media.first {
                             mediaReference = .standalone(media: media)
                         }
+                    } else if sourceMessage.id.namespace == Namespaces.Message.Cloud {
+                        // AyuGram: copy of a message from a chat with protected content
+                        if let media = sourceMessage.media.first(where: { $0 is TelegramMediaImage || $0 is TelegramMediaFile }) {
+                            mediaReference = .message(message: MessageReference(sourceMessage), media: media)
+                        }
+                        AyuGramSettings.debugLog("forward as copy from restricted chat peer=\(sourceMessage.id.peerId.toInt64()) media=\(mediaReference != nil)")
                     }
                     var text = sourceMessage.text
                     var hidesCaption = false
