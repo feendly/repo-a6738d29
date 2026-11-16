@@ -137,6 +137,9 @@ A feature counts as done only when its row says PASS.
 | 112 | Ordinary forwarding after the restricted-chat change | run 43790136052 | nash forwards "edi icon test v2" to the luki chat | A normal forward with the "Forwarded from" header | Sent with "Forwarded from nash" | PASS |
 | 113 | Forward from a chat with protected content | run 43790136052 | - | Message goes out as a copy | Not run: no chat with protected content on either account | NOT RUN |
 | 114 | Deleted photo message keeps its picture | run 43790136052 | luki forwards a Telegram News photo post to nash; nash opens the chat so the photo loads; luki deletes it for both; nash reopens the chat | Message stays with the deleted mark and the picture | Stays with the bin mark; picture and caption shown | PASS |
+| 115 | Per-chat filter | run 43806809468 | Filters on (override); as nash in the luki chat hold the photo message, "Add to Filters for This Chat" | Message hidden; entry `chat:<id>:...` in settings | Hidden at once, chat list shows "Filtered message", entry `chat:38033187551:Placeholders for App Updates...` listed | PASS |
+| 116 | Filter export and import | run 43806809468 | Settings: Copy Filters to Clipboard; remove the chat entry; Import Filters from Clipboard | "2 filters copied", then "1 filter added" and the entry is back | As expected | PASS |
+| 117 | View-once media kept | run 43806809468 | luki records a view-once voice message for nash | - | Not run: iOS asked for microphone access, which was declined rather than granted over VNC | NOT RUN, needs the user |
 
 ## Notes
 
@@ -184,3 +187,6 @@ A feature counts as done only when its row says PASS.
 - Row 112 left one forwarded message from nash in the luki-nash chat (12:09 AM November 16).
 - The iPad was not charging on November 15 and 16 (87% down to 8%); the two drops off the network during a copy were the battery running out, followed by a reboot.
 - Switching accounts over VNC: hold the account avatar in the bottom bar, then tap the other account (the current one is listed first of the two).
+- Row 116 replaced the iPad clipboard with the filter list. The test chat filter was removed afterwards; the existing "Lazy" filter was left alone.
+- Row 117: the microphone prompt for AyuGram was answered "Don't Allow". To allow it later: iPad Settings, AyuGram, Microphone.
+- The iPad was in portrait from 2:23 AM November 16; screen captures are then 834x1112.

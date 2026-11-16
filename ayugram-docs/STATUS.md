@@ -1,7 +1,7 @@
 # AyuGram for iOS: feature status
 
 One row per AyuGram Desktop setting or feature (source: `ayu/ayu_settings.h`
-and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43790136052 installed).
+and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-13 (run 43806809468 installed).
 
 Status values:
 
@@ -16,10 +16,10 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 68 |
+| TESTED | 69 |
 | LOG ONLY | 5 |
-| UNTESTED | 19 |
-| TODO | 9 |
+| UNTESTED | 21 |
+| TODO | 6 |
 | N/A | 11 |
 
 Some rows group several related desktop settings, so the row count is lower than the number of individual settings.
@@ -39,7 +39,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | sendWithoutSound | Never | UNTESTED | Two switches: always, or only in ghost mode. Not observable from the sender's side |
 | suggestGhostModeBeforeViewingStory | on | UNTESTED | Prompt when opening someone's stories from the chat list (run 43349311751). Ghost Mode stays on afterwards; desktop turns it off again when the story closes. Stories opened from a profile or a chat avatar are not covered |
 | Per-setting "locked" flags (5) | off | TESTED | Five Lock switches. With Read Receipts locked, switching Ghost Mode on and off left it alone and changed the other four |
-| useGlobalGhostMode (per-account ghost) | on | TODO | iOS build is global only |
+| useGlobalGhostMode (per-account ghost) | on | UNTESTED | "One Ghost Mode for All Accounts". Off: ghost switches and their locks are stored per account and follow the account in front (the only one that reads chats and goes online) |
 | "Read message" context action | - | TESTED | "Send Read Receipt" in the long-press menu; nash saw two ticks (run 43002933120) |
 
 ## Message history
@@ -54,7 +54,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | semiTransparentDeletedMessages | off | TESTED | Bubble messages only (run 43084196247) |
 | Deleted messages while app is closed | - | TESTED | App now stays running in the background (see Stay Connected). Kept a deletion sent from another device while the app was in the background (TESTING row 43). Not captured after a device reboot until the app runs again |
 | Deleted messages in groups and channels | - | TESTED | Group: nash's message deleted for everyone stays visible for luki with the deleted mark. Channel: log only |
-| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). Cleared history and deleted chats are not ported |
+| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history and deleted chats are not ported |
 | Proper database instead of a plist file | - | TODO | |
 | Edit history viewer | - | TESTED | Sheet listing each earlier version with its time and a copy button |
 
@@ -67,7 +67,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | hideFromBlocked | off | TESTED (groups only: after luki blocked nash, nash's messages and join notice disappeared from the Test group. Only for users whose blocked state the app has loaded or changed since this version. The chat list preview shows "Filtered message" once the row is redrawn; the author's name stays) |
 | shadowBanIds | empty | TESTED (via message menu, shown in the filter list as user:<id>) |
 | filterZalgo | off | TESTED (nash's zalgo message hidden for luki, "Filtered message" in the chat list) |
-| Per-chat filters, import/export | - | UNTESTED | "Add to Filters for This Chat" in the message menu stores `chat:<id>:<pattern>`; "Copy Filters to Clipboard" and "Import Filters from Clipboard" in settings (own JSON format, not desktop's) |
+| Per-chat filters, import/export | - | TESTED | "Add to Filters for This Chat" in the message menu stores `chat:<id>:<pattern>`; "Copy Filters to Clipboard" and "Import Filters from Clipboard" in settings (own JSON format, not desktop's). Run 43806809468. Not checked that the same text stays visible in another chat |
 
 ## Premium, ads and clutter
 
@@ -104,7 +104,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | showMessageSeconds | off | TESTED | |
 | showPeerId | Bot API | TESTED | ID row in user profiles; on/off only |
 | appIcon | default | TODO | |
-| monoFont / main font | system | TODO | |
+| monoFont / main font | system | UNTESTED | "Monospace Font" row takes a font name; regular weight only (bold and italic monospace stay Menlo). Desktop has no separate main-font setting |
 | messageBubbleRadius | 16 | N/A | Stock setting exists: Appearance, Message Corners |
 | removeMessageTail | off | TESTED | |
 | avatarCorners | 23 | TESTED | On/off switch for rounded squares, not a radius slider; restart to apply |
@@ -167,7 +167,7 @@ Some rows group several related desktop settings, so the row count is lower than
 |---|---|---|
 | AyuGram settings screen | TESTED | Ghost, history, filters and other sections; Add Filter prompt works |
 | Streamer mode | TESTED | Hides own phone number in Settings only (run 43084196247) |
-| Message shot (messages as image) | TODO | 7 options |
+| Message shot (messages as image) | UNTESTED | "Message Shot" in the message menu renders the message (or the selected messages on screen) into one image and opens the share sheet. Desktop's theme and layout options are not ported |
 | Forward without author / from restricted chats / repeat message | UNTESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages). With "Allow Copy and Save in Restricted Chats" on, Forward shows in chats with protected content and the message goes out as a copy (text plus the first photo or file, by reference, no re-upload; albums are not kept together). No restricted chat at hand to try it |
 | Translator providers (Telegram, Google, Yandex, native) | TODO | |
 | Webview options (spoof Android, larger size) | TESTED | "Report Android to Mini Apps" TESTED by log (the mini app address from the server says ios with it off and android with it on). The two size options resize the desktop mini app window and have no iOS equivalent |
