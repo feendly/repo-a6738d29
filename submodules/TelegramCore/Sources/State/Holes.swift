@@ -1216,8 +1216,9 @@ func fetchMessageHistoryHole(accountPeerId: PeerId, source: FetchMessageHistoryH
                         } else {
                             answerToStore = answerCurrent
                         }
-                        let _ = transaction.addMessages(answerToStore, location: .Random)
-                        
+                        // AyuGram: not over a message kept from a history cleared for both.
+                        let _ = transaction.addMessages(ayuDropHistoryClearOverKept(transaction: transaction, messages: answerToStore), location: .Random)
+
                         // A candidate the server answered as gone but written again while the confirmation was in
                         // flight is left stored: the newer write wins (`applyStoredMessageConfirmation`). It is not
                         // confirmed either, so the hole is opened again over it alone, and the next fill that reaches

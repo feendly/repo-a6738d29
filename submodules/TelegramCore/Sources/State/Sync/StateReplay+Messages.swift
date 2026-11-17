@@ -319,7 +319,13 @@ extension ReplayContext {
     
     func applyEditMessage(_ id: MessageId, _ message: StoreMessage) {
         var generatedEvent: (reactionAuthor: Peer, reaction: MessageReaction.Reaction, message: Message, timestamp: Int32)?
+        var ayuKeptAgainstEdit = false
         transaction.updateMessage(id, update: { previousMessage in
+            // AyuGram: a history cleared for both arrives for the newest message as an edit into a service message.
+            if let kept = ayuKeepMessageReplacedByHistoryClear(id: id, previous: previousMessage, edit: message) {
+                ayuKeptAgainstEdit = true
+                return .update(kept)
+            }
             // AyuGram: remember the previous text of an edited message.
             if AyuGramSettings.bool(.saveMessagesHistory), !previousMessage.text.isEmpty, previousMessage.text != message.text {
                 AyuMessagesStore.shared.addEdit(id, previousText: previousMessage.text, timestamp: Int32(Date().timeIntervalSince1970))
@@ -344,7 +350,10 @@ extension ReplayContext {
         // A fetch in flight may be bringing the message with its old content, over the edited one or, with none stored
         // here, instead of it; it stores this edit in its place (Postbox's record of recent edits,
         // `fetchedMessagesWithRecentEdits`; owner decision 2026-10-25).
-        transaction.recordMessageEdit(message)
+        // AyuGram: not for an edit refused above, which would then be stored by the next fetch.
+        if !ayuKeptAgainstEdit {
+            transaction.recordMessageEdit(message)
+        }
         if let generatedEvent = generatedEvent {
             addedReactionEvents.append(generatedEvent)
         }

@@ -194,12 +194,63 @@ func ayuKeepRemotelyDeletedMessages(transaction: Transaction, ids: [MessageId]) 
         AyuGramSettings.debugLog("deleted message kept \(id)")
         // Rewrite the message unchanged so its version changes and the chat redraws it with the deleted mark.
         transaction.updateMessage(id, update: { currentMessage in
-            var storeForwardInfo: StoreMessageForwardInfo?
-            if let forwardInfo = currentMessage.forwardInfo {
-                storeForwardInfo = StoreMessageForwardInfo(authorId: forwardInfo.author?.id, sourceId: forwardInfo.source?.id, sourceMessageId: forwardInfo.sourceMessageId, date: forwardInfo.date, authorSignature: forwardInfo.authorSignature, psaType: forwardInfo.psaType, flags: forwardInfo.flags)
-            }
-            return .update(StoreMessage(id: currentMessage.id, customStableId: nil, globallyUniqueId: currentMessage.globallyUniqueId, groupingKey: currentMessage.groupingKey, threadId: currentMessage.threadId, timestamp: currentMessage.timestamp, flags: StoreMessageFlags(currentMessage.flags), tags: currentMessage.tags, globalTags: currentMessage.globalTags, localTags: currentMessage.localTags, forwardInfo: storeForwardInfo, authorId: currentMessage.author?.id, text: currentMessage.text, attributes: currentMessage.attributes, media: currentMessage.media))
+            return .update(ayuUnchangedStoreMessage(currentMessage))
         })
     }
     return idsToDelete
+}
+
+/// `message` as a StoreMessage with nothing changed. Writing it back bumps the message's version, so the chat redraws
+/// it (with the deleted mark when it has just been marked).
+func ayuUnchangedStoreMessage(_ currentMessage: Message) -> StoreMessage {
+    var storeForwardInfo: StoreMessageForwardInfo?
+    if let forwardInfo = currentMessage.forwardInfo {
+        storeForwardInfo = StoreMessageForwardInfo(authorId: forwardInfo.author?.id, sourceId: forwardInfo.source?.id, sourceMessageId: forwardInfo.sourceMessageId, date: forwardInfo.date, authorSignature: forwardInfo.authorSignature, psaType: forwardInfo.psaType, flags: forwardInfo.flags)
+    }
+    return StoreMessage(id: currentMessage.id, customStableId: nil, globallyUniqueId: currentMessage.globallyUniqueId, groupingKey: currentMessage.groupingKey, threadId: currentMessage.threadId, timestamp: currentMessage.timestamp, flags: StoreMessageFlags(currentMessage.flags), tags: currentMessage.tags, globalTags: currentMessage.globalTags, localTags: currentMessage.localTags, forwardInfo: storeForwardInfo, authorId: currentMessage.author?.id, text: currentMessage.text, attributes: currentMessage.attributes, media: currentMessage.media)
+}
+
+/// When the other side clears a chat's history for both, the server deletes every message but the newest, which it
+/// turns into an invisible "history cleared" service message by an edit. With deleted messages kept, that edit is
+/// a deletion: the message stays as it was, marked deleted. Returns the write to make instead of the edit, or nil to
+/// apply the edit.
+func ayuKeepMessageReplacedByHistoryClear(id: MessageId, previous: Message, edit: StoreMessage) -> StoreMessage? {
+    guard AyuGramSettings.bool(.saveDeletedMessages), id.namespace == Namespaces.Message.Cloud else {
+        return nil
+    }
+    let isHistoryClear: (Media) -> Bool = { media in
+        if let action = media as? TelegramMediaAction, case .historyCleared = action.action {
+            return true
+        }
+        return false
+    }
+    guard edit.media.contains(where: isHistoryClear), !previous.media.contains(where: isHistoryClear) else {
+        return nil
+    }
+    if !AyuGramSettings.bool(.saveForBots), let user = previous.peers[id.peerId] as? TelegramUser, user.botInfo != nil {
+        return nil
+    }
+    if !AyuMessagesStore.shared.isDeleted(id) {
+        AyuMessagesStore.shared.markDeleted(id, timestamp: Int32(Date().timeIntervalSince1970))
+    }
+    AyuGramSettings.debugLog("deleted message kept \(id) (history cleared)")
+    return ayuUnchangedStoreMessage(previous)
+}
+
+/// Messages fetched from the server, minus the "history cleared" placeholders that would overwrite a stored message
+/// kept by `ayuKeepMessageReplacedByHistoryClear` (a history fill or a confirmation brings the placeholder back).
+func ayuDropHistoryClearOverKept(transaction: Transaction, messages: [StoreMessage]) -> [StoreMessage] {
+    guard AyuGramSettings.bool(.saveDeletedMessages) else {
+        return messages
+    }
+    return messages.filter { message in
+        guard case let .Id(id) = message.id, let previous = transaction.getMessage(id) else {
+            return true
+        }
+        if let kept = ayuKeepMessageReplacedByHistoryClear(id: id, previous: previous, edit: message) {
+            transaction.updateMessage(id, update: { _ in .update(kept) })
+            return false
+        }
+        return true
+    }
 }

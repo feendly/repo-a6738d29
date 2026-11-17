@@ -274,7 +274,7 @@ func applyStoredMessageConfirmation(transaction: Transaction, accountPeerId: Pee
     let deletedIds = deleteStoredMessagesAsReceivedDeletion(transaction: transaction, mediaBox: mediaBox, ids: missingIds)
     if !refreshed.isEmpty {
         updatePeers(transaction: transaction, accountPeerId: accountPeerId, peers: confirmation.peers)
-        let _ = transaction.addMessages(refreshed, location: .Random)
+        let _ = transaction.addMessages(ayuDropHistoryClearOverKept(transaction: transaction, messages: refreshed), location: .Random)
     }
 
     if !deletedIds.isEmpty || !refreshed.isEmpty {
