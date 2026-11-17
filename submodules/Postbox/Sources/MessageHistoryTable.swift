@@ -1,5 +1,10 @@
 import Foundation
 
+/// AyuGram (diagnostics): told about every message id the history table is about to remove, with the source
+/// location of the Transaction call that asked ("?" when the removal started inside Postbox).
+public var ayuPostboxRemovalObserver: ((_ ids: [MessageId], _ site: String) -> Void)?
+var ayuCurrentRemovalSite: String = "?"
+
 struct IntermediateMessageHistoryEntry {
     let message: IntermediateMessage
 }
@@ -481,6 +486,8 @@ final class MessageHistoryTable: Table {
     }
 
     func removeMessages(_ messageIds: [MessageId], operationsByPeerId: inout [PeerId: [MessageHistoryOperation]], updatedMedia: inout [MediaId: Media?], unsentMessageOperations: inout [IntermediateMessageHistoryUnsentOperation], updatedPeerReadStateOperations: inout [PeerId: PeerReadStateSynchronizationOperation?], globalTagsOperations: inout [GlobalMessageHistoryTagsOperation], pendingActionsOperations: inout [PendingMessageActionsOperation], updatedMessageActionsSummaries: inout [PendingMessageActionsSummaryKey: Int32], updatedMessageTagSummaries: inout [MessageHistoryTagsSummaryKey: MessageHistoryTagNamespaceSummary], invalidateMessageTagSummaries: inout [InvalidatedMessageHistoryTagsSummaryEntryOperation], localTagsOperations: inout [IntermediateMessageHistoryLocalTagsOperation], timestampBasedMessageAttributesOperations: inout [TimestampBasedMessageAttributesOperation], forEachMedia: ((Media) -> Void)?) {
+        // AyuGram (diagnostics): report the removal and the code that asked for it.
+        ayuPostboxRemovalObserver?(messageIds, ayuCurrentRemovalSite)
         // Every requested id, stored or not: a fetch in flight may be bringing back one never stored here.
         // The bulk removals (clearHistory, removeAllMessagesWith...) pass the ids they remove.
         self.recentlyDeletedMessages.add(ids: messageIds)

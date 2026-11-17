@@ -39,7 +39,7 @@ func _internal_deleteEphemeralReplacements(transaction: Transaction, anchorIds: 
     }
 }
 
-public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBox, ids: [MessageId], deleteMedia: Bool = true, manualAddMessageThreadStatsDifference: ((MessageThreadKey, Int, Int) -> Void)? = nil) {
+public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBox, ids: [MessageId], deleteMedia: Bool = true, manualAddMessageThreadStatsDifference: ((MessageThreadKey, Int, Int) -> Void)? = nil, ayuFile: StaticString = #fileID, ayuLine: UInt = #line) {
     var resourceIds: [MediaResourceId] = []
     if deleteMedia {
         for id in ids {
@@ -71,7 +71,7 @@ public func _internal_deleteMessages(transaction: Transaction, mediaBox: MediaBo
     }
     let replacementMessageIds = _internal_ephemeralReplacementMessageIds(transaction: transaction, anchorIds: ids)
     transaction.deleteMessages(ids + replacementMessageIds, forEachMedia: { _ in
-    })
+    }, ayuFile: ayuFile, ayuLine: ayuLine)
 }
 
 func _internal_deleteAllMessagesWithAuthor(transaction: Transaction, mediaBox: MediaBox, peerId: PeerId, authorId: PeerId, namespace: MessageId.Namespace) {

@@ -39,6 +39,14 @@ public final class AyuMessagesStore {
                 self.hiddenKeys = Set(hidden)
             }
         }
+        // Diagnostics: a kept message should only leave storage when the user deletes it. Log every other way it
+        // goes, with the code that asked (the newest message of a cleared private chat disappears after being kept).
+        ayuPostboxRemovalObserver = { ids, site in
+            let kept = ids.filter { AyuMessagesStore.shared.isDeleted($0) }
+            if !kept.isEmpty {
+                AyuGramSettings.debugLog("kept message removed \(kept.map { "\($0.peerId.toInt64()):\($0.namespace):\($0.id)" }) by \(site)")
+            }
+        }
     }
 
     private static func key(_ id: MessageId) -> String {

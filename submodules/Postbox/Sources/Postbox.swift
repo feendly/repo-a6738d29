@@ -175,13 +175,17 @@ public final class Transaction {
         self.postbox?.addChatListHole(groupId: groupId, hole: hole)
     }
     
-    public func deleteMessages(_ messageIds: [MessageId], forEachMedia: ((Media) -> Void)?) {
+    public func deleteMessages(_ messageIds: [MessageId], forEachMedia: ((Media) -> Void)?, ayuFile: StaticString = #fileID, ayuLine: UInt = #line) {
         assert(!self.disposed)
+        ayuCurrentRemovalSite = "\(ayuFile):\(ayuLine)"
+        defer { ayuCurrentRemovalSite = "?" }
         self.postbox?.deleteMessages(messageIds, forEachMedia: forEachMedia)
     }
     
-    public func deleteMessagesInRange(peerId: PeerId, namespace: MessageId.Namespace, minId: MessageId.Id, maxId: MessageId.Id, forEachMedia: ((Media) -> Void)?) {
+    public func deleteMessagesInRange(peerId: PeerId, namespace: MessageId.Namespace, minId: MessageId.Id, maxId: MessageId.Id, forEachMedia: ((Media) -> Void)?, ayuFile: StaticString = #fileID, ayuLine: UInt = #line) {
         assert(!self.disposed)
+        ayuCurrentRemovalSite = "\(ayuFile):\(ayuLine) range"
+        defer { ayuCurrentRemovalSite = "?" }
         self.postbox?.deleteMessagesInRange(peerId: peerId, namespace: namespace, minId: minId, maxId: maxId, forEachMedia: forEachMedia)
     }
     
@@ -189,13 +193,17 @@ public final class Transaction {
         self.postbox?.withAllMessages(peerId: peerId, namespace: namespace, f)
     }
     
-    public func clearHistory(_ peerId: PeerId, threadId: Int64?, minTimestamp: Int32?, maxTimestamp: Int32?, namespaces: MessageIdNamespaces, forEachMedia: ((Media) -> Void)?) {
+    public func clearHistory(_ peerId: PeerId, threadId: Int64?, minTimestamp: Int32?, maxTimestamp: Int32?, namespaces: MessageIdNamespaces, forEachMedia: ((Media) -> Void)?, ayuFile: StaticString = #fileID, ayuLine: UInt = #line) {
         assert(!self.disposed)
+        ayuCurrentRemovalSite = "\(ayuFile):\(ayuLine) clearHistory"
+        defer { ayuCurrentRemovalSite = "?" }
         self.postbox?.clearHistory(peerId, threadId: threadId, minTimestamp: minTimestamp, maxTimestamp: maxTimestamp, namespaces: namespaces, forEachMedia: forEachMedia)
     }
     
-    public func removeAllMessagesWithAuthor(_ peerId: PeerId, authorId: PeerId, namespace: MessageId.Namespace, forEachMedia: ((Media) -> Void)?) {
+    public func removeAllMessagesWithAuthor(_ peerId: PeerId, authorId: PeerId, namespace: MessageId.Namespace, forEachMedia: ((Media) -> Void)?, ayuFile: StaticString = #fileID, ayuLine: UInt = #line) {
         assert(!self.disposed)
+        ayuCurrentRemovalSite = "\(ayuFile):\(ayuLine) author"
+        defer { ayuCurrentRemovalSite = "?" }
         self.postbox?.removeAllMessagesWithAuthor(peerId, authorId: authorId, namespace: namespace, forEachMedia: forEachMedia)
     }
     
@@ -226,8 +234,10 @@ public final class Transaction {
         }
     }
     
-    public func deleteMessagesWithGlobalIds(_ ids: [Int32], forEachMedia: ((Media) -> Void)?) {
+    public func deleteMessagesWithGlobalIds(_ ids: [Int32], forEachMedia: ((Media) -> Void)?, ayuFile: StaticString = #fileID, ayuLine: UInt = #line) {
         assert(!self.disposed)
+        ayuCurrentRemovalSite = "\(ayuFile):\(ayuLine) globalIds"
+        defer { ayuCurrentRemovalSite = "?" }
         if let postbox = self.postbox {
             // Every requested global id, stored or not: a message never stored here maps to no MessageId
             // below, and a fetch in flight may be bringing it back (RecentlyDeletedMessages.swift).
