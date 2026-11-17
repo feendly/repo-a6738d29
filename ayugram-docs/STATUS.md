@@ -16,9 +16,9 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 79 |
+| TESTED | 80 |
 | LOG ONLY | 4 |
-| UNTESTED | 11 |
+| UNTESTED | 10 |
 | TODO | 0 |
 | N/A | 13 |
 
@@ -36,7 +36,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | ghostModeActive (master switch) | off | TESTED | Flips the five switches both ways |
 | markReadAfterAction | on | LOG ONLY | Reacting sends one read receipt (log `read forced`, `read push SENT`) |
 | useScheduledMessages | off | TESTED | Only with online status off, as on desktop. Message arrives about 12 s later; input field clears at once (run 43012742764) |
-| sendWithoutSound | Never | UNTESTED | Two switches: always, or only in ghost mode. Not observable from the sender's side |
+| sendWithoutSound | Never | TESTED | Two switches: always, or only in ghost mode. Checked on the receiving account: a message sent with "Always Send Silently" arrives marked silent (TESTING row 146) |
 | suggestGhostModeBeforeViewingStory | on | UNTESTED | Prompt when opening someone's stories from the chat list (run 43349311751). Ghost Mode stays on afterwards; desktop turns it off again when the story closes. Stories opened from a profile or a chat avatar are not covered |
 | Per-setting "locked" flags (5) | off | TESTED | Five Lock switches. With Read Receipts locked, switching Ghost Mode on and off left it alone and changed the other four |
 | useGlobalGhostMode (per-account ghost) | on | TESTED | "One Ghost Mode for All Accounts". Off: ghost switches and their locks are stored per account and follow the account in front (the only one that reads chats and goes online). Run 43814121847 |
@@ -54,7 +54,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | semiTransparentDeletedMessages | off | TESTED | Bubble messages only (run 43084196247) |
 | Deleted messages while app is closed | - | TESTED | App now stays running in the background (see Stay Connected). Kept a deletion sent from another device while the app was in the background (TESTING row 43). Not captured after a device reboot until the app runs again |
 | Deleted messages in groups and channels | - | TESTED | Group: nash's message deleted for everyone stays visible for luki with the deleted mark. Channel: log only |
-| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history: TESTED in a private chat cleared for both by the other side; every message is kept, including the newest, which the server edits into an invisible "history cleared" service message (TESTING row 144). Deleted chats: not tried |
+| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history: TESTED in a private chat cleared for both by the other side; every message is kept, including the newest, which the server edits into an invisible "history cleared" service message (TESTING row 144). Deleted chats: TESTED; when the other side deletes a private chat for both, the chat stays in the list with every message kept and marked deleted (TESTING row 145) |
 | Proper database instead of a plist file | - | N/A | NOT PORTED, FOR THE USER TO CONFIRM: internal storage only, nothing to see in the app. Kept deletions and edit history live in a plist store that has worked through every test; desktop's separate database is not needed for any ported feature |
 | Edit history viewer | - | TESTED | Sheet listing each earlier version with its time and a copy button |
 
@@ -120,7 +120,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | showPrivateChatReactions | on | TESTED | Reaction hidden with the switch off |
 | wideMultiplier | 1.0 | N/A | Desktop window layout |
 | hideNotificationCounters | off | TESTED | Chats tab counter only (run 43084196247) |
-| hideNotificationBadge | off | UNTESTED | With the app in front the badge is cleared and comes back when switched off (TESTING row 135). From run 43968637447 the switch is copied into the app group and the notification extension sets the badge to 0; the copy was seen, but no push arrived during a 10-minute background watch (row 142). Needs a message in an unmuted chat while the app is in the background |
+| hideNotificationBadge | off | UNTESTED | With the app in front the badge is cleared and comes back when switched off (TESTING row 135). From run 43968637447 the switch is copied into the app group and the notification extension sets the badge to 0; the copy was seen, but no push arrived during a 10-minute background watch (row 142). Needs a message in an unmuted chat while the app is in the background. CANNOT BE SEEN ON THE TEST IPAD: no push reaches this TrollStore install at all (row 147: an unmuted chat got a message with the app in the background and iOS recorded no notification), so the extension never runs. Needs an install that receives pushes |
 | hideAllChatsFolder | off | TESTED | Hides the All Chats tab when there is at least one folder and starts on the first folder. The All Chats list stays reachable from the Chats tab long-press menu (no tab is highlighted then); swiping does not reach it |
 | channelBottomButton | Discuss | TESTED | Two switches: "Discuss Instead of Mute" (on by default; only for channels with a discussion group, others keep Mute) and "Hide". Discuss opens the linked group (run 43527721168) |
 | quickAdminShortcuts | on | TESTED | Recent Actions (admins) and Administrators (group members, channel admins) in the menu shown by holding the chat avatar; desktop has top-bar buttons. Administrators seen working (run 43561780256); Recent Actions seen in a group with topics, whose own top-right menu carries both items (TESTING row 134). A basic group has neither item |
