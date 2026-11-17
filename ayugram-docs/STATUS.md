@@ -16,9 +16,9 @@ Status values:
 
 | Status | Rows |
 |---|---|
-| TESTED | 78 |
+| TESTED | 79 |
 | LOG ONLY | 4 |
-| UNTESTED | 12 |
+| UNTESTED | 11 |
 | TODO | 0 |
 | N/A | 13 |
 
@@ -54,7 +54,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | semiTransparentDeletedMessages | off | TESTED | Bubble messages only (run 43084196247) |
 | Deleted messages while app is closed | - | TESTED | App now stays running in the background (see Stay Connected). Kept a deletion sent from another device while the app was in the background (TESTING row 43). Not captured after a device reboot until the app runs again |
 | Deleted messages in groups and channels | - | TESTED | Group: nash's message deleted for everyone stays visible for luki with the deleted mark. Channel: log only |
-| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history: tried in a private chat (TESTING row 138); every message but the newest was kept, and the newest is kept from the next build, to be retested. Deleted chats: not tried |
+| Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history: in a private chat cleared for both by the other side, every message is kept except the newest one when it is your own (TESTING rows 138 and 141). The log says it was kept, yet it is gone from the chat and the chat list preview is empty; cause not found. Deleted chats: not tried |
 | Proper database instead of a plist file | - | N/A | NOT PORTED, FOR THE USER TO CONFIRM: internal storage only, nothing to see in the app. Kept deletions and edit history live in a plist store that has worked through every test; desktop's separate database is not needed for any ported feature |
 | Edit history viewer | - | TESTED | Sheet listing each earlier version with its time and a copy button |
 
@@ -81,7 +81,7 @@ Some rows group several related desktop settings, so the row count is lower than
 | disableCustomBackgrounds | off | UNTESTED | Ignores a photo wallpaper set for one chat, as on desktop; chat themes are left alone (seen November 16: a chat theme stayed with the switch on, which matches desktop). NEEDS THE USER: setting a photo wallpaper needs Photos access |
 | disableOpenLinkWarning | off | TESTED | Hidden links in chats and in profiles open without "Open link?"; links with a login part and proxy links still ask (TESTING row 133) |
 | disableNotificationsDelay | off | N/A | Desktop delays its own notifications while another device is online; iOS notifications come from Apple's push service and have no such delay to remove |
-| disableGreetingSticker | off | UNTESTED | Sticker hidden in an empty private chat, but the card kept "tap on the greeting below" and the sticker space (TESTING row 139); both dropped in the next build, to be retested |
+| disableGreetingSticker | off | TESTED | An empty private chat shows only "No messages here yet...": no sticker, no "tap on the greeting below" (TESTING row 140) |
 | hidePremiumStatuses | off | TESTED | Chat list only: the status icon next to a contact's name disappears |
 | collapseSimilarChannels | on | TESTED | Similar channels under the "you joined" notice start collapsed; tapping the notice opens them. Channels whose list was already loaded keep their state |
 | hideSimilarChannels | off | TESTED | The Similar Channels panel shown after joining a channel is gone with the switch on (run 43536445199) |
