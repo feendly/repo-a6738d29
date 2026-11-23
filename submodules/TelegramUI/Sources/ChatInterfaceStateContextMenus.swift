@@ -1356,22 +1356,96 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             }
         }
         
-        // AyuGram: explicit read receipt while read receipts are suppressed
-        if !AyuGramSettings.sendReadMessages && message.id.namespace == Namespaces.Message.Cloud {
-            let ayuReadPeerId = message.id.peerId
-            actions.append(.action(ContextMenuActionItem(text: "Send Read Receipt", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Read"), color: theme.actionSheet.primaryTextColor)
+        // AyuGram: menu items, named, drawn and ordered as on desktop. Items set to "Extended Menu"
+        // in settings are collected for the AyuGram submenu (desktop shows them while CTRL or SHIFT is held).
+        var ayuExtendedActions: [ContextMenuItem] = []
+
+        // AyuGram: edit history
+        let ayuEdits = AyuMessagesStore.shared.edits(message.id)
+        if !ayuEdits.isEmpty {
+            actions.append(.action(ContextMenuActionItem(text: "History", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/EditsHistory"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
-                f(.default)
-                let _ = ayuSendReadReceiptNow(account: context.account, peerId: ayuReadPeerId).startStandalone()
+                f(.dismissWithoutContent)
+                let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                // A sheet listing every saved version with the time it was replaced; each can be copied.
+                let ayuSheet = ActionSheetController(presentationData: presentationData)
+                let ayuDateFormatter = DateFormatter()
+                ayuDateFormatter.dateStyle = .medium
+                ayuDateFormatter.timeStyle = .medium
+                var ayuItems: [ActionSheetItem] = []
+                ayuItems.append(ActionSheetTextItem(title: "Edits History (\(ayuEdits.count) earlier version\(ayuEdits.count == 1 ? "" : "s"))"))
+                for (ayuIndex, ayuEdit) in ayuEdits.enumerated() {
+                    let ayuDate = ayuEdit.timestamp == 0 ? "" : ayuDateFormatter.string(from: Date(timeIntervalSince1970: Double(ayuEdit.timestamp)))
+                    let ayuVersionText = ayuEdit.text
+                    ayuItems.append(ActionSheetTextItem(title: ayuDate.isEmpty ? ayuVersionText : "\(ayuDate)\n\(ayuVersionText)"))
+                    ayuItems.append(ActionSheetButtonItem(title: "Copy Version \(ayuIndex + 1)", color: .accent, action: { [weak ayuSheet] in
+                        UIPasteboard.general.string = ayuVersionText
+                        ayuSheet?.dismissAnimated()
+                    }))
+                }
+                ayuSheet.setItemGroups([ActionSheetItemGroup(items: ayuItems), ActionSheetItemGroup(items: [
+                    ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak ayuSheet] in
+                        ayuSheet?.dismissAnimated()
+                    })
+                ])])
+                controllerInteraction.presentController(ayuSheet, nil)
             })))
         }
-        
+
+        // AyuGram: hide the message on this device
+        let ayuHideVisibility = AyuGramSettings.contextMenuVisibility(.showHideMessageInContextMenu)
+        if ayuHideVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud {
+            let ayuHideId = message.id
+            actions.append(.action(ContextMenuActionItem(text: "Hide", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuClear"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                let _ = ayuHideMessageLocally(account: context.account, id: ayuHideId).startStandalone()
+            })))
+            if ayuHideVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
+        }
+
+        // AyuGram: search this chat for messages from the same user
+        let ayuUserMessagesVisibility = AyuGramSettings.contextMenuVisibility(.showUserMessagesInContextMenu)
+        if ayuUserMessagesVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud && message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuSearchAuthor = message.author, ayuSearchAuthor.id.namespace == Namespaces.Peer.CloudUser {
+            actions.append(.action(ContextMenuActionItem(text: "User Messages", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuTTL"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                interfaceInteraction.beginMessageSearch(.member(ayuSearchAuthor), "")
+            })))
+            if ayuUserMessagesVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
+        }
+
+        // AyuGram: send the same text again
+        let ayuRepeatVisibility = AyuGramSettings.contextMenuVisibility(.showRepeatMessageInContextMenu)
+        if ayuRepeatVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud && !message.text.isEmpty && message.media.isEmpty {
+            let ayuRepeatText = message.text
+            let ayuRepeatPeerId = message.id.peerId
+            let ayuRepeatThreadId = message.threadId
+            let ayuRepeatAttributes = message.attributes.filter { $0 is TextEntitiesMessageAttribute }
+            actions.append(.action(ContextMenuActionItem(text: "Repeat Message", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/Repeat"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                let _ = enqueueMessages(account: context.account, peerId: ayuRepeatPeerId, messages: [.message(text: ayuRepeatText, attributes: ayuRepeatAttributes, inlineStickers: [:], mediaReference: nil, threadId: ayuRepeatThreadId, replyToMessageId: nil, replyToStoryId: nil, localGroupingKey: nil, correlationId: nil, bubbleUpEmojiOrStickersets: [])]).startStandalone()
+            })))
+            if ayuRepeatVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
+        }
+
         // AyuGram: message details
-        if AyuGramSettings.bool(.showMessageDetailsInContextMenu) && message.id.namespace == Namespaces.Message.Cloud {
+        let ayuDetailsVisibility = AyuGramSettings.contextMenuVisibility(.showMessageDetailsInContextMenu)
+        if ayuDetailsVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud {
             let ayuDetailsMessage = message
-            actions.append(.action(ContextMenuActionItem(text: "Message Details", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Info"), color: theme.actionSheet.primaryTextColor)
+            actions.append(.action(ContextMenuActionItem(text: "Details", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuInfo"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.dismissWithoutContent)
                 let presentationData = context.sharedContext.currentPresentationData.with { $0 }
@@ -1396,22 +1470,11 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                 if AyuMessagesStore.shared.isDeleted(ayuDetailsMessage.id) {
                     lines.append("Deleted on the server")
                 }
-                controllerInteraction.presentController(textAlertController(context: context, title: "Message Details", text: lines.joined(separator: "\n"), actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]), nil)
+                controllerInteraction.presentController(textAlertController(context: context, title: "Details", text: lines.joined(separator: "\n"), actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]), nil)
             })))
-        }
-
-        // AyuGram: send the same text again
-        if AyuGramSettings.bool(.showRepeatMessageInContextMenu) && message.id.namespace == Namespaces.Message.Cloud && !message.text.isEmpty && message.media.isEmpty {
-            let ayuRepeatText = message.text
-            let ayuRepeatPeerId = message.id.peerId
-            let ayuRepeatThreadId = message.threadId
-            let ayuRepeatAttributes = message.attributes.filter { $0 is TextEntitiesMessageAttribute }
-            actions.append(.action(ContextMenuActionItem(text: "Repeat", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Resend"), color: theme.actionSheet.primaryTextColor)
-            }, action: { _, f in
-                f(.dismissWithoutContent)
-                let _ = enqueueMessages(account: context.account, peerId: ayuRepeatPeerId, messages: [.message(text: ayuRepeatText, attributes: ayuRepeatAttributes, inlineStickers: [:], mediaReference: nil, threadId: ayuRepeatThreadId, replyToMessageId: nil, replyToStoryId: nil, localGroupingKey: nil, correlationId: nil, bubbleUpEmojiOrStickersets: [])]).startStandalone()
-            })))
+            if ayuDetailsVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
         }
 
         // AyuGram: message shot (the message as an image)
@@ -1420,7 +1483,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             if let selectionState = chatPresentationInterfaceState.interfaceState.selectionState, selectionState.selectedIds.contains(message.id) {
                 ayuShotIds = selectionState.selectedIds
             }
-            actions.append(.action(ContextMenuActionItem(text: "Message Shot", icon: { theme in
+            actions.append(.action(ContextMenuActionItem(text: "Shot", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Image"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.dismissWithoutContent)
@@ -1430,23 +1493,13 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             })))
         }
 
-        // AyuGram: hide the message on this device
-        if AyuGramSettings.bool(.showHideMessageInContextMenu) && message.id.namespace == Namespaces.Message.Cloud {
-            let ayuHideId = message.id
-            actions.append(.action(ContextMenuActionItem(text: "Hide", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/HideArchive"), color: theme.actionSheet.primaryTextColor)
-            }, action: { _, f in
-                f(.dismissWithoutContent)
-                let _ = ayuHideMessageLocally(account: context.account, id: ayuHideId).startStandalone()
-            })))
-        }
-
         let ayuMenuMessageId = message.id
         // AyuGram: add the message text to the filters
-        if AyuGramSettings.bool(.showAddFilterInContextMenu) && message.flags.contains(.Incoming) && !message.text.isEmpty {
+        let ayuFilterVisibility = AyuGramSettings.contextMenuVisibility(.showAddFilterInContextMenu)
+        if ayuFilterVisibility != .hidden && AyuGramSettings.bool(.filtersEnabled) && message.flags.contains(.Incoming) && !message.text.isEmpty {
             let ayuFilterText = message.text
-            actions.append(.action(ContextMenuActionItem(text: "Add to Filters", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/TagFilter"), color: theme.actionSheet.primaryTextColor)
+            actions.append(.action(ContextMenuActionItem(text: "Add Filter", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuAddToFolder"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.default)
                 var patterns = AyuFilters.patterns
@@ -1457,9 +1510,12 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
                 }
             })))
+            if ayuFilterVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
             let ayuFilterPeerId = message.id.peerId.toInt64()
-            actions.append(.action(ContextMenuActionItem(text: "Add to Filters for This Chat", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/TagFilter"), color: theme.actionSheet.primaryTextColor)
+            actions.append(.action(ContextMenuActionItem(text: "Add Filter to Current Chat", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuAddToFolder"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.default)
                 var patterns = AyuFilters.patterns
@@ -1470,13 +1526,16 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
                 }
             })))
+            if ayuFilterVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
         }
 
         // AyuGram: shadow ban the author (their messages are hidden in groups on this device)
-        if AyuGramSettings.bool(.showAddFilterInContextMenu) && message.flags.contains(.Incoming) && message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuBanAuthor = message.author, ayuBanAuthor.id.namespace == Namespaces.Peer.CloudUser {
+        if ayuFilterVisibility != .hidden && AyuGramSettings.bool(.filtersEnabled) && message.flags.contains(.Incoming) && message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuBanAuthor = message.author, ayuBanAuthor.id.namespace == Namespaces.Peer.CloudUser {
             let ayuBanEntry = AyuFilters.userPrefix + String(ayuBanAuthor.id.id._internalGetInt64Value())
             actions.append(.action(ContextMenuActionItem(text: "Shadow Ban", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Ban"), color: theme.actionSheet.primaryTextColor)
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuStealth"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.default)
                 var patterns = AyuFilters.patterns
@@ -1486,48 +1545,38 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
                 }
             })))
+            if ayuFilterVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
         }
 
-        // AyuGram: search this chat for messages from the same user
-        if AyuGramSettings.bool(.showUserMessagesInContextMenu) && message.id.namespace == Namespaces.Message.Cloud && message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuSearchAuthor = message.author, ayuSearchAuthor.id.namespace == Namespaces.Peer.CloudUser {
-            actions.append(.action(ContextMenuActionItem(text: "User Messages", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Search"), color: theme.actionSheet.primaryTextColor)
+        // AyuGram: explicit read receipt while read receipts are suppressed
+        if !AyuGramSettings.sendReadMessages && message.id.namespace == Namespaces.Message.Cloud {
+            let ayuReadPeerId = message.id.peerId
+            actions.append(.action(ContextMenuActionItem(text: "Read Message", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuShowInChat"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
-                f(.dismissWithoutContent)
-                interfaceInteraction.beginMessageSearch(.member(ayuSearchAuthor), "")
+                f(.default)
+                let _ = ayuSendReadReceiptNow(account: context.account, peerId: ayuReadPeerId).startStandalone()
             })))
         }
 
-        // AyuGram: edit history
-        let ayuEdits = AyuMessagesStore.shared.edits(message.id)
-        if !ayuEdits.isEmpty {
-            actions.append(.action(ContextMenuActionItem(text: "Edit History", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Copy"), color: theme.actionSheet.primaryTextColor)
-            }, action: { _, f in
-                f(.dismissWithoutContent)
-                let presentationData = context.sharedContext.currentPresentationData.with { $0 }
-                // A sheet listing every saved version with the time it was replaced; each can be copied.
-                let ayuSheet = ActionSheetController(presentationData: presentationData)
-                let ayuDateFormatter = DateFormatter()
-                ayuDateFormatter.dateStyle = .medium
-                ayuDateFormatter.timeStyle = .medium
-                var ayuItems: [ActionSheetItem] = []
-                ayuItems.append(ActionSheetTextItem(title: "Edit History (\(ayuEdits.count) earlier version\(ayuEdits.count == 1 ? "" : "s"))"))
-                for (ayuIndex, ayuEdit) in ayuEdits.enumerated() {
-                    let ayuDate = ayuEdit.timestamp == 0 ? "" : ayuDateFormatter.string(from: Date(timeIntervalSince1970: Double(ayuEdit.timestamp)))
-                    let ayuVersionText = ayuEdit.text
-                    ayuItems.append(ActionSheetTextItem(title: ayuDate.isEmpty ? ayuVersionText : "\(ayuDate)\n\(ayuVersionText)"))
-                    ayuItems.append(ActionSheetButtonItem(title: "Copy Version \(ayuIndex + 1)", color: .accent, action: { [weak ayuSheet] in
-                        UIPasteboard.general.string = ayuVersionText
-                        ayuSheet?.dismissAnimated()
-                    }))
-                }
-                ayuSheet.setItemGroups([ActionSheetItemGroup(items: ayuItems), ActionSheetItemGroup(items: [
-                    ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak ayuSheet] in
-                        ayuSheet?.dismissAnimated()
-                    })
-                ])])
-                controllerInteraction.presentController(ayuSheet, nil)
+        // AyuGram: the extended menu
+        if !ayuExtendedActions.isEmpty {
+            let ayuExtendedItems = ayuExtendedActions
+            let ayuBackTitle = chatPresentationInterfaceState.strings.Common_Back
+            actions.append(.action(ContextMenuActionItem(text: "AyuGram", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuGroupReactions"), color: theme.actionSheet.primaryTextColor)
+            }, action: { c, _ in
+                var ayuSubItems: [ContextMenuItem] = []
+                ayuSubItems.append(.action(ContextMenuActionItem(text: ayuBackTitle, textColor: .primary, icon: { theme in
+                    return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Back"), color: theme.actionSheet.primaryTextColor)
+                }, iconSource: nil, iconPosition: .left, action: { c, _ in
+                    c?.popItems()
+                })))
+                ayuSubItems.append(.separator)
+                ayuSubItems.append(contentsOf: ayuExtendedItems)
+                c?.pushItems(items: .single(ContextController.Items(content: .list(ayuSubItems))))
             })))
         }
         

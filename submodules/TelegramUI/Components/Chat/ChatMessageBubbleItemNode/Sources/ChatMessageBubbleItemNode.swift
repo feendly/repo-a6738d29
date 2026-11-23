@@ -4427,7 +4427,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         strongSelf.contentContainersWrapperNode.frame = CGRect(origin: CGPoint(), size: layout.contentSize)
         
         // AyuGram: dim messages that were deleted on the server
-        strongSelf.mainContainerNode.alpha = (AyuGramSettings.bool(.semiTransparentDeletedMessages) && AyuMessagesStore.shared.isDeleted(item.content.firstMessage.id)) ? 0.5 : 1.0
+        strongSelf.mainContainerNode.alpha = (AyuGramSettings.bool(.semiTransparentDeletedMessages) && AyuMessagesStore.shared.isDeleted(item.content.firstMessage.id)) ? 0.7 : 1.0
 
         strongSelf.appliedItem = item
         strongSelf.appliedForwardInfo = ChatMessageAppliedForwardInfo(messageId: item.content.firstMessage.id, source: forwardSource, authorSignature: forwardAuthorSignature)

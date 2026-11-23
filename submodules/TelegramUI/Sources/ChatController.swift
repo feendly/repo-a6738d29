@@ -2486,7 +2486,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
 
             // AyuGram: ask before sending a sticker
             if AyuGramSettings.bool(.stickerConfirmation) && !strongSelf.ayuSendConfirmed {
-                strongSelf.present(textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.updatedPresentationData, title: nil, text: "Send this sticker?", actions: [TextAlertAction(type: .genericAction, title: strongSelf.presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: strongSelf.presentationData.strings.Common_OK, action: { [weak self] in
+                strongSelf.present(textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.updatedPresentationData, title: nil, text: "Do you want to send this sticker?", actions: [TextAlertAction(type: .genericAction, title: strongSelf.presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: strongSelf.presentationData.strings.Common_OK, action: { [weak self] in
                     guard let self else {
                         return
                     }
@@ -2773,7 +2773,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         }, sendGif: { [weak self] fileReference, sourceView, sourceRect, silentPosting, schedule in
             // AyuGram: ask before sending a GIF
             if let strongSelf = self, AyuGramSettings.bool(.gifConfirmation) && !strongSelf.ayuSendConfirmed {
-                strongSelf.present(textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.updatedPresentationData, title: nil, text: "Send this GIF?", actions: [TextAlertAction(type: .genericAction, title: strongSelf.presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: strongSelf.presentationData.strings.Common_OK, action: { [weak self] in
+                strongSelf.present(textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.updatedPresentationData, title: nil, text: "Do you want to send this GIF?", actions: [TextAlertAction(type: .genericAction, title: strongSelf.presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: strongSelf.presentationData.strings.Common_OK, action: { [weak self] in
                     guard let self else {
                         return
                     }
@@ -2839,7 +2839,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
             }
             // AyuGram: ask before sending a GIF from trending or search
             if AyuGramSettings.bool(.gifConfirmation) && !strongSelf.ayuSendConfirmed {
-                strongSelf.present(textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.updatedPresentationData, title: nil, text: "Send this GIF?", actions: [TextAlertAction(type: .genericAction, title: strongSelf.presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: strongSelf.presentationData.strings.Common_OK, action: { [weak self] in
+                strongSelf.present(textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.updatedPresentationData, title: nil, text: "Do you want to send this GIF?", actions: [TextAlertAction(type: .genericAction, title: strongSelf.presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: strongSelf.presentationData.strings.Common_OK, action: { [weak self] in
                     guard let self else {
                         return
                     }

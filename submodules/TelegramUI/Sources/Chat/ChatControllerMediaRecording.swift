@@ -688,8 +688,14 @@ extension ChatControllerImpl {
         postpone: Bool = false
     ) {
         // AyuGram: ask before sending a recorded voice or video message
-        if AyuGramSettings.bool(.voiceConfirmation) && !self.ayuSendConfirmed {
-            self.present(textAlertController(context: self.context, updatedPresentationData: self.updatedPresentationData, title: nil, text: "Send this recording?", actions: [TextAlertAction(type: .genericAction, title: self.presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: self.presentationData.strings.Common_OK, action: { [weak self] in
+        var ayuNeedsConfirmation = AyuGramSettings.bool(.voiceConfirmation)
+        var ayuConfirmationText = "Do you want to send this voice message?"
+        if let ayuDraft = self.presentationInterfaceState.interfaceState.mediaDraftState, case .video = ayuDraft {
+            ayuNeedsConfirmation = AyuGramSettings.bool(.roundConfirmation)
+            ayuConfirmationText = "Do you want to send this round video?"
+        }
+        if ayuNeedsConfirmation && !self.ayuSendConfirmed {
+            self.present(textAlertController(context: self.context, updatedPresentationData: self.updatedPresentationData, title: nil, text: ayuConfirmationText, actions: [TextAlertAction(type: .genericAction, title: self.presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: self.presentationData.strings.Common_OK, action: { [weak self] in
                 guard let self else {
                     return
                 }

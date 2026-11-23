@@ -53,6 +53,8 @@ public class ItemListExpandableSwitchItem: ListViewItem, ItemListItem {
     let activatedWhileDisabled: () -> Void
     let selectAction: () -> Void
     let subAction: (SubItem) -> Void
+    // AyuGram: optional long-press on a sub item (locks a Ghost Mode option)
+    public var subLongPressAction: ((SubItem) -> Void)?
     public let tag: ItemListItemTag?
     
     public let selectable: Bool = true
@@ -129,6 +131,7 @@ private final class SubItemNode: HighlightTrackingButtonNode {
     private var theme: PresentationTheme?
     private var item: ItemListExpandableSwitchItem.SubItem?
     private var action: ((ItemListExpandableSwitchItem.SubItem) -> Void)?
+    private var longPressAction: ((ItemListExpandableSwitchItem.SubItem) -> Void)?
     
     init() {
         self.textNode = ImmediateTextNode()
@@ -151,11 +154,28 @@ private final class SubItemNode: HighlightTrackingButtonNode {
         action(item)
     }
     
-    func update(presentationData: ItemListPresentationData, item: ItemListExpandableSwitchItem.SubItem, action: @escaping (ItemListExpandableSwitchItem.SubItem) -> Void, size: CGSize, transition: ContainedViewLayoutTransition) {
+    override func didLoad() {
+        super.didLoad()
+        
+        // AyuGram: long-press support
+        let recognizer = UILongPressGestureRecognizer(target: self, action: #selector(self.ayuLongPress(_:)))
+        recognizer.minimumPressDuration = 0.45
+        self.view.addGestureRecognizer(recognizer)
+    }
+    
+    @objc private func ayuLongPress(_ recognizer: UILongPressGestureRecognizer) {
+        guard recognizer.state == .began, let item = self.item, let longPressAction = self.longPressAction else {
+            return
+        }
+        longPressAction(item)
+    }
+    
+    func update(presentationData: ItemListPresentationData, item: ItemListExpandableSwitchItem.SubItem, action: @escaping (ItemListExpandableSwitchItem.SubItem) -> Void, longPressAction: ((ItemListExpandableSwitchItem.SubItem) -> Void)? = nil, size: CGSize, transition: ContainedViewLayoutTransition) {
         let themeUpdated = self.theme !== presentationData.theme
         
         self.item = item
         self.action = action
+        self.longPressAction = longPressAction
         
         let leftInset: CGFloat = 60.0
         let separatorRightInset: CGFloat = 16.0
@@ -625,7 +645,7 @@ public class ItemListExpandableSwitchItemNode: ListViewItemNode, ItemListItemNod
                             strongSelf.subItemContainer.addSubnode(subItemNode)
                         }
                         let subItemFrame = CGRect(origin: nextSubItemPosition, size: subItemSize)
-                        subItemNode.update(presentationData: item.presentationData, item: subItem, action: item.subAction, size: subItemSize, transition: subItemNodeTransition)
+                        subItemNode.update(presentationData: item.presentationData, item: subItem, action: item.subAction, longPressAction: item.subLongPressAction, size: subItemSize, transition: subItemNodeTransition)
                         subItemNodeTransition.updateFrame(node: subItemNode, frame: subItemFrame)
                         
                         nextSubItemPosition.y += subItemSize.height

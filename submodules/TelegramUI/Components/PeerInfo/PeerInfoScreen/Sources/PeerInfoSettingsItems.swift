@@ -275,7 +275,7 @@ func settingsItems(data: PeerInfoScreenData?, context: AccountContext, presentat
         interaction.openSettings(.powerSaving)
     }))
     // AyuGram
-    items[.advanced]!.append(PeerInfoScreenDisclosureItem(id: 100, text: "AyuGram", icon: PresentationResourcesSettings.powerSaving, action: {
+    items[.advanced]!.append(PeerInfoScreenDisclosureItem(id: 100, text: "AyuGram Preferences", icon: PresentationResourcesSettings.premium, action: {
         AyuGramSettings.debugLog("ui AyuGram row tapped")
         interaction.openSettings(.ayuGram)
     }))

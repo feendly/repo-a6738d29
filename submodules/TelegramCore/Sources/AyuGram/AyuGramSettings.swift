@@ -95,6 +95,7 @@ public final class AyuGramSettings {
         case quickAdminShortcuts
         case showMessageShotInContextMenu
         case useGlobalGhostMode
+        case roundConfirmation
 
         public var defaultValue: Bool {
             switch self {
@@ -132,7 +133,7 @@ public final class AyuGramSettings {
                 return false
             case .showHideMessageInContextMenu, .gifConfirmation, .disableGreetingSticker:
                 return false
-            case .voiceConfirmation, .hideSimilarChannels, .hidePremiumStatuses:
+            case .voiceConfirmation, .roundConfirmation, .hideSimilarChannels, .hidePremiumStatuses:
                 return false
             case .showChannelReactions, .showGroupReactions, .showPrivateChatReactions:
                 return true
@@ -253,15 +254,33 @@ public final class AyuGramSettings {
         defaults.set(value, forKey: "ayu.monoFont")
     }
 
-    /// Text shown next to the time of a message the server deleted.
-    public static var deletedMark: String {
-        if bool(.replaceBottomInfoWithIcons) {
-            return "\u{1F5D1}"
-        }
+    /// Stand-ins for desktop's bin and pencil icons in the message time text ("Replace with Icons").
+    /// Both are em-wide spaces; the date node draws the icon over them, in the colour of the time.
+    public static let deletedIconMarker = "\u{2003}"
+    public static let editedIconMarker = "\u{2001}"
+
+    /// The custom deleted mark, whatever "Replace with Icons" says (shown in settings).
+    public static var deletedMarkText: String {
         if let value = defaults.string(forKey: "ayu.deletedMark"), !value.isEmpty {
             return value
         }
         return "\u{1F9F9}"
+    }
+
+    /// The custom edited mark; nil means the stock "edited" label (shown in settings).
+    public static var editedMarkText: String? {
+        if let value = defaults.string(forKey: "ayu.editedMark"), !value.isEmpty {
+            return value
+        }
+        return nil
+    }
+
+    /// Text shown next to the time of a message the server deleted.
+    public static var deletedMark: String {
+        if bool(.replaceBottomInfoWithIcons) {
+            return deletedIconMarker
+        }
+        return deletedMarkText
     }
 
     public static func setDeletedMark(_ value: String) {
@@ -271,16 +290,116 @@ public final class AyuGramSettings {
     /// Custom replacement for the "edited" label; nil means the stock label.
     public static var editedMark: String? {
         if bool(.replaceBottomInfoWithIcons) {
-            return "\u{270E}"
+            return editedIconMarker
         }
-        if let value = defaults.string(forKey: "ayu.editedMark"), !value.isEmpty {
-            return value
-        }
-        return nil
+        return editedMarkText
     }
 
     public static func setEditedMark(_ value: String) {
         defaults.set(value, forKey: "ayu.editedMark")
+    }
+
+    // MARK: Three-way settings (as on desktop)
+
+    /// When a message menu item is shown: desktop's Hidden / Shown / Extended Menu.
+    /// "Extended" items sit in the AyuGram submenu of the message menu (desktop: CTRL or SHIFT while right-clicking).
+    public enum ContextMenuVisibility: Int {
+        case hidden = 0
+        case shown = 1
+        case extended = 2
+    }
+
+    private static func defaultContextMenuVisibility(_ key: BoolKey) -> ContextMenuVisibility {
+        switch key {
+        case .showUserMessagesInContextMenu, .showMessageDetailsInContextMenu:
+            return .extended
+        case .showHideMessageInContextMenu, .showRepeatMessageInContextMenu:
+            return .hidden
+        default:
+            return .shown
+        }
+    }
+
+    public static func contextMenuVisibility(_ key: BoolKey) -> ContextMenuVisibility {
+        if let value = overrideValue(key) {
+            return value ? .shown : .hidden
+        }
+        if let stored = defaults.object(forKey: "\(key.storageKey).visibility") as? Int, let value = ContextMenuVisibility(rawValue: stored) {
+            return value
+        }
+        // A value saved by a version that only had an on/off switch
+        if let legacy = defaults.object(forKey: key.storageKey) as? Bool {
+            return legacy ? .shown : .hidden
+        }
+        return defaultContextMenuVisibility(key)
+    }
+
+    public static func setContextMenuVisibility(_ key: BoolKey, _ value: ContextMenuVisibility) {
+        defaults.set(value.rawValue, forKey: "\(key.storageKey).visibility")
+        defaults.set(value != .hidden, forKey: key.storageKey)
+    }
+
+    /// Desktop's "Show Peer ID": Hide / Telegram API / Bot API.
+    public enum PeerIdDisplay: Int {
+        case hidden = 0
+        case telegramApi = 1
+        case botApi = 2
+    }
+
+    public static var peerIdDisplay: PeerIdDisplay {
+        if let value = overrideValue(.showPeerId) {
+            return value ? .botApi : .hidden
+        }
+        if let stored = defaults.object(forKey: "ayu.showPeerId.mode") as? Int, let value = PeerIdDisplay(rawValue: stored) {
+            return value
+        }
+        if let legacy = defaults.object(forKey: BoolKey.showPeerId.storageKey) as? Bool, !legacy {
+            return .hidden
+        }
+        return .botApi
+    }
+
+    public static func setPeerIdDisplay(_ value: PeerIdDisplay) {
+        defaults.set(value.rawValue, forKey: "ayu.showPeerId.mode")
+        defaults.set(value != .hidden, forKey: BoolKey.showPeerId.storageKey)
+    }
+
+    /// Desktop's "Send without Sound": 0 Never, 1 When using Ghost Mode, 2 Always.
+    public static var sendWithoutSoundMode: Int {
+        if bool(.sendWithoutSoundAlways) {
+            return 2
+        }
+        return bool(.sendWithoutSoundInGhost) ? 1 : 0
+    }
+
+    public static func setSendWithoutSoundMode(_ value: Int) {
+        setBool(.sendWithoutSoundAlways, value == 2)
+        setBool(.sendWithoutSoundInGhost, value == 1)
+    }
+
+    /// Desktop's "Channel Bottom Button": 0 Hide, 1 Mute, 2 Discuss.
+    public static var channelBottomButtonMode: Int {
+        if bool(.channelBottomButtonHidden) {
+            return 0
+        }
+        return bool(.channelBottomButtonDiscuss) ? 2 : 1
+    }
+
+    public static func setChannelBottomButtonMode(_ value: Int) {
+        setBool(.channelBottomButtonHidden, value == 0)
+        setBool(.channelBottomButtonDiscuss, value == 2)
+    }
+
+    /// "Reset Settings": every AyuGram preference back to its default. Filters and the blocked-user mirror are kept.
+    public static func resetAll() {
+        let kept: Set<String> = ["ayu.filters", "ayu.blockedPeerIds"]
+        for key in defaults.dictionaryRepresentation().keys {
+            if key.hasPrefix("ayu.") && !kept.contains(key) {
+                defaults.removeObject(forKey: key)
+            }
+        }
+        mirrorHideBadge()
+        debugLog("settings reset")
     }
 
     /// Link used to request a preview: swaps a few hosts for mirrors that return richer previews.

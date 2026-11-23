@@ -45,6 +45,38 @@ public enum ChatMessageDateAndStatusType: Equatable {
     case FreeOutgoing(ChatMessageDateAndStatusOutgoingType)
 }
 
+// AyuGram: the deleted and edited icons of the message time, sized for the date font and cached.
+private final class AyuDateMarkImages {
+    private static let lock = NSLock()
+    private static var cache: [String: UIImage] = [:]
+
+    static func image(named name: String, fontSize: CGFloat) -> UIImage? {
+        let key = "\(name)-\(Int(fontSize * 10.0))"
+        self.lock.lock()
+        let cached = self.cache[key]
+        self.lock.unlock()
+        if let cached = cached {
+            return cached
+        }
+        guard let image = UIImage(bundleImageName: name) else {
+            return nil
+        }
+        var result = image
+        // The assets are drawn for the default 11 pt date font.
+        if abs(fontSize - 11.0) > 0.1 {
+            let factor = fontSize / 11.0
+            let size = CGSize(width: ceil(image.size.width * factor), height: ceil(image.size.height * factor))
+            if let scaled = generateScaledImage(image: image, size: size, opaque: false) {
+                result = scaled
+            }
+        }
+        self.lock.lock()
+        self.cache[key] = result
+        self.lock.unlock()
+        return result
+    }
+}
+
 private let reactionCountFont = Font.semibold(11.0)
 private let reactionFont = Font.regular(12.0)
 
@@ -610,8 +642,19 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
             if arguments.edited {
                 if let useEditedTimestamp = arguments.context.getAppConfigValue("message_primary_edited_date") as? Bool, useEditedTimestamp {
                 } else {
-                    // AyuGram: custom edited mark
-                    updatedDateText = "\(AyuGramSettings.editedMark ?? arguments.presentationData.strings.Conversation_MessageEditedLabel) \(updatedDateText)"
+                    // AyuGram: custom edited mark; it follows the deleted mark, as on desktop
+                    let ayuEditedMark = AyuGramSettings.editedMark ?? arguments.presentationData.strings.Conversation_MessageEditedLabel
+                    let ayuDeletedPrefix = "\(AyuGramSettings.deletedMark) "
+                    if updatedDateText.hasPrefix(ayuDeletedPrefix) {
+                        let ayuRest = String(updatedDateText.dropFirst(ayuDeletedPrefix.count))
+                        if AyuGramSettings.bool(.replaceBottomInfoWithIcons) {
+                            updatedDateText = "\(AyuGramSettings.deletedMark)\(ayuEditedMark) \(ayuRest)"
+                        } else {
+                            updatedDateText = "\(ayuDeletedPrefix)\(ayuEditedMark) \(ayuRest)"
+                        }
+                    } else {
+                        updatedDateText = "\(ayuEditedMark) \(updatedDateText)"
+                    }
                 }
             }
             if let impressionCount = arguments.impressionCount {
@@ -619,7 +662,22 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
             }
             
             let dateFont = Font.regular(floor(arguments.presentationData.fontSize.baseDisplaySize * 11.0 / 17.0))
-            let (date, dateApply) = dateLayout(TextNodeLayoutArguments(attributedString: NSAttributedString(string: updatedDateText, font: dateFont, textColor: dateColor), backgroundColor: nil, maximumNumberOfLines: 1, truncationType: .middle, constrainedSize: arguments.constrainedSize, alignment: .natural, cutout: nil, insets: UIEdgeInsets()))
+            let dateAttributedString = NSMutableAttributedString(string: updatedDateText, font: dateFont, textColor: dateColor)
+            // AyuGram: "Replace with Icons" draws desktop's bin and pencil over their stand-in spaces, in the colour of the time
+            if AyuGramSettings.bool(.replaceBottomInfoWithIcons) {
+                let ayuDateText = updatedDateText as NSString
+                let ayuMarks: [(String, String)] = [
+                    (AyuGramSettings.deletedIconMarker, "Ayu/DeletedMark"),
+                    (AyuGramSettings.editedIconMarker, "Ayu/EditedMark")
+                ]
+                for (ayuMarker, ayuImageName) in ayuMarks {
+                    let ayuRange = ayuDateText.range(of: ayuMarker)
+                    if ayuRange.location != NSNotFound, let ayuImage = AyuDateMarkImages.image(named: ayuImageName, fontSize: dateFont.pointSize) {
+                        dateAttributedString.addAttribute(.attachment, value: ayuImage, range: ayuRange)
+                    }
+                }
+            }
+            let (date, dateApply) = dateLayout(TextNodeLayoutArguments(attributedString: dateAttributedString, backgroundColor: nil, maximumNumberOfLines: 1, truncationType: .middle, constrainedSize: arguments.constrainedSize, alignment: .natural, cutout: nil, insets: UIEdgeInsets()))
             
             let checkOffset = floor(arguments.presentationData.fontSize.baseDisplaySize * 6.0 / 17.0)
             

@@ -7386,8 +7386,8 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
         // AyuGram: quick ghost mode toggle
         let ayuGhostActive = AyuGramSettings.isGhostModeActive
         if AyuGramSettings.bool(.showGhostToggleInDrawer) {
-            items.append(.action(ContextMenuActionItem(text: ayuGhostActive ? "Turn Ghost Mode Off" : "Turn Ghost Mode On", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Eye"), color: theme.contextMenu.primaryColor)
+            items.append(.action(ContextMenuActionItem(text: ayuGhostActive ? "Disable Ghost Mode" : "Enable Ghost Mode", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/Ghost"), color: theme.contextMenu.primaryColor)
             }, action: { _, f in
                 AyuGramSettings.setGhostModeActive(!ayuGhostActive)
                 f(.default)
@@ -7396,8 +7396,8 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
         // AyuGram: quick streamer mode toggle
         if AyuGramSettings.bool(.showStreamerToggleInDrawer) {
             let ayuStreamerActive = AyuGramSettings.bool(.streamerMode)
-            items.append(.action(ContextMenuActionItem(text: ayuStreamerActive ? "Turn Streamer Mode Off" : "Turn Streamer Mode On", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Eye"), color: theme.contextMenu.primaryColor)
+            items.append(.action(ContextMenuActionItem(text: ayuStreamerActive ? "Disable Streamer Mode" : "Enable Streamer Mode", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/Streamer"), color: theme.contextMenu.primaryColor)
             }, action: { _, f in
                 AyuGramSettings.setBool(.streamerMode, !ayuStreamerActive)
                 f(.default)
@@ -7407,7 +7407,7 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
         if AyuGramSettings.bool(.showLReadToggleInDrawer) {
             let ayuContext = self.context
             items.append(.action(ContextMenuActionItem(text: "Read on Local", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/MarkAsRead"), color: theme.contextMenu.primaryColor)
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/LRead"), color: theme.contextMenu.primaryColor)
             }, action: { _, f in
                 AyuGramSettings.overrideSendReadMessages(false, seconds: 60.0)
                 let _ = ayuContext.engine.messages.markAllChatsAsReadInteractively(items: [(groupId: .root, filterPredicate: nil), (groupId: .archive, filterPredicate: nil)]).startStandalone()
@@ -7419,11 +7419,11 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
             let ayuContext = self.context
             let ayuCancelTitle = strings.Common_Cancel
             items.append(.action(ContextMenuActionItem(text: "Read on Server", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/MarkAsRead"), color: theme.contextMenu.primaryColor)
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/SRead"), color: theme.contextMenu.primaryColor)
             }, action: { _, f in
                 f(.default)
                 // Presented on the main window: on iPad this controller is not on screen while another tab is open.
-                ayuContext.sharedContext.mainWindow?.present(textAlertController(context: ayuContext, title: nil, text: "Mark every chat as read on the server? Senders will see their messages as read.", actions: [TextAlertAction(type: .genericAction, title: ayuCancelTitle, action: {}), TextAlertAction(type: .defaultAction, title: "Read", action: {
+                ayuContext.sharedContext.mainWindow?.present(textAlertController(context: ayuContext, title: nil, text: "Do you want to read all messages?", actions: [TextAlertAction(type: .genericAction, title: ayuCancelTitle, action: {}), TextAlertAction(type: .defaultAction, title: "Read", action: {
                     AyuGramSettings.overrideSendReadMessages(true, seconds: 120.0)
                     let _ = ayuContext.engine.messages.markAllChatsAsReadInteractively(items: [(groupId: .root, filterPredicate: nil), (groupId: .archive, filterPredicate: nil)]).startStandalone()
                 })]), on: .root)

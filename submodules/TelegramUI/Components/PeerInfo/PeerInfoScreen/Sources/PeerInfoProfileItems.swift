@@ -193,8 +193,8 @@ func infoItems(
                 interaction.requestLayout(animated)
             }))
         }
-        // AyuGram: show the user ID (Bot API form); tapping copies it.
-        if AyuGramSettings.bool(.showPeerId) {
+        // AyuGram: show the user ID (the same number in both API forms); tapping copies it.
+        if AyuGramSettings.peerIdDisplay != .hidden {
             let ayuIdText = "\(user.id.id._internalGetInt64Value())"
             items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: "ID", text: ayuIdText, textColor: .primary, action: { _, _ in
                 UIPasteboard.general.string = ayuIdText
@@ -755,6 +755,18 @@ func infoItems(
                     }))
                 }
                 
+                // AyuGram: channel or supergroup ID in the form chosen in settings; tapping copies it.
+                let ayuPeerIdDisplay = AyuGramSettings.peerIdDisplay
+                if ayuPeerIdDisplay != .hidden {
+                    let ayuRawId = channel.id.id._internalGetInt64Value()
+                    let ayuIdText = ayuPeerIdDisplay == .botApi ? "-100\(ayuRawId)" : "\(ayuRawId)"
+                    items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: "ID", text: ayuIdText, textColor: .primary, action: { _, _ in
+                        UIPasteboard.general.string = ayuIdText
+                    }, longTapAction: nil, contextAction: nil, requestLayout: { animated in
+                        interaction.requestLayout(animated)
+                    }))
+                }
+
                 if let verification = (data.cachedData as? CachedChannelData)?.verification {
                     let attributedPrefix = NSMutableAttributedString(string: "  ")
                     attributedPrefix.addAttribute(ChatTextInputAttributes.customEmoji, value: ChatTextInputTextCustomEmojiAttribute(interactivelySelectedFromPackId: nil, fileId: verification.iconFileId, file: nil), range: NSMakeRange(0, 1))
