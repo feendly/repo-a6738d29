@@ -14,6 +14,19 @@ jobs:
     timeout-minutes: 300
 
     steps:
+      # The hosted runner has little free disk and the build needs most of it.
+      # Simulator runtimes stay: Xcode's asset and interface compilers use them.
+      - name: Free disk space
+        run: |
+          df -h /
+          ls -la /Applications | grep -i xcode || true
+          sudo rm -rf "$HOME/Library/Android" || true
+          sudo rm -rf "$HOME/.dotnet" /usr/local/share/dotnet || true
+          sudo rm -rf "$HOME/hostedtoolcache" || true
+          if [ -n "${AGENT_TOOLSDIRECTORY:-}" ]; then sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true; fi
+          rm -rf "$(brew --cache 2>/dev/null)" || true
+          df -h /
+
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
@@ -26,6 +39,7 @@ jobs:
           xcodebuild -version
 
       - name: Restore Bazel cache
+        id: bazel-cache
         uses: actions/cache/restore@v4
         with:
           path: /Users/Shared/bazel-cache
@@ -37,9 +51,15 @@ jobs:
         run: |
           set -x
           sudo mkdir -p /Users/Shared
-          cp -R $GITHUB_WORKSPACE /Users/Shared/
-          mv /Users/Shared/$(basename $GITHUB_WORKSPACE) /Users/Shared/telegram-ios
+          # Moved, not copied: a second copy of the sources and their history does not fit on the disk.
+          # The link keeps the workspace path working for the later steps.
+          mv "$GITHUB_WORKSPACE" /Users/Shared/telegram-ios
+          ln -s /Users/Shared/telegram-ios "$GITHUB_WORKSPACE"
           mkdir -p /Users/Shared/bazel-cache
+          du -sh /Users/Shared/telegram-ios || true
+          # The restored cache has grown over many runs: keep its most recently used part.
+          python3 /Users/Shared/telegram-ios/ayugram-build/trim_cache.py /Users/Shared/bazel-cache 7
+          df -h /
 
       - name: Build the App
         env:
@@ -78,13 +98,25 @@ jobs:
           mkdir -p build/artifacts
           cp -L bazel-bin/Telegram/Telegram.ipa build/artifacts/Telegram-original.ipa
           ls -l build/artifacts
+          df -h /
+
+      # Bazel's working files are not needed once the IPA is copied; removing them leaves room
+      # to pack the cache, which is first cut down to about what one build uses.
+      - name: Trim Bazel cache
+        if: always()
+        run: |
+          df -h /
+          chmod -R u+w /private/var/tmp/_bazel_containerhost 2>/dev/null || true
+          rm -rf /private/var/tmp/_bazel_containerhost || true
+          python3 /Users/Shared/telegram-ios/ayugram-build/trim_cache.py /Users/Shared/bazel-cache 6.5 || true
+          df -h /
 
       - name: Save Bazel cache
         if: always()
         uses: actions/cache/save@v4
         with:
           path: /Users/Shared/bazel-cache
-          key: bazel-${{ hashFiles('versions.json') }}-${{ github.sha }}
+          key: ${{ steps.bazel-cache.outputs.cache-primary-key }}
 
       - name: Re-identify for TrollStore
         id: reid
