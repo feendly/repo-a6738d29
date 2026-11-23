@@ -18,6 +18,7 @@ enum SettingsSection: Int, CaseIterable {
     case edit
     case phone
     case accounts
+    case ayuGram
     case myProfile
     case wallet
     case proxy
@@ -275,7 +276,7 @@ func settingsItems(data: PeerInfoScreenData?, context: AccountContext, presentat
         interaction.openSettings(.powerSaving)
     }))
     // AyuGram
-    items[.advanced]!.append(PeerInfoScreenDisclosureItem(id: 100, text: "AyuGram Preferences", icon: PresentationResourcesSettings.premium, action: {
+    items[.ayuGram]!.append(PeerInfoScreenDisclosureItem(id: 100, text: "AyuGram Preferences", icon: PresentationResourcesSettings.premium, action: {
         AyuGramSettings.debugLog("ui AyuGram row tapped")
         interaction.openSettings(.ayuGram)
     }))

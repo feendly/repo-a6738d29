@@ -1444,33 +1444,88 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         let ayuDetailsVisibility = AyuGramSettings.contextMenuVisibility(.showMessageDetailsInContextMenu)
         if ayuDetailsVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud {
             let ayuDetailsMessage = message
+            let ayuDetailsBackTitle = chatPresentationInterfaceState.strings.Common_Back
             actions.append(.action(ContextMenuActionItem(text: "Details", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuInfo"), color: theme.actionSheet.primaryTextColor)
-            }, action: { _, f in
-                f(.dismissWithoutContent)
-                let presentationData = context.sharedContext.currentPresentationData.with { $0 }
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                var lines: [String] = []
-                lines.append("Message ID: \(ayuDetailsMessage.id.id)")
-                lines.append("Chat ID: \(ayuDetailsMessage.id.peerId.id._internalGetInt64Value())")
-                if let author = ayuDetailsMessage.author {
-                    lines.append("Sender ID: \(author.id.id._internalGetInt64Value())")
-                }
-                lines.append("Date: \(formatter.string(from: Date(timeIntervalSince1970: Double(ayuDetailsMessage.timestamp))))")
+            }, action: { c, _ in
+                // One row per fact (title, value, icon), grouped as on desktop; tapping a row copies its value.
+                let ayuFormatter = DateFormatter()
+                ayuFormatter.dateStyle = .medium
+                ayuFormatter.timeStyle = .medium
+
+                var ayuPostRows: [(String, String, String)] = []
+                var ayuMessageRows: [(String, String, String)] = []
+                var ayuMediaRows: [(String, String, String)] = []
+                var ayuPeerRows: [(String, String, String)] = []
+
+                ayuMessageRows.append(("ID", "\(ayuDetailsMessage.id.id)", "Ayu/MenuInfo"))
+                ayuMessageRows.append(("Date", ayuFormatter.string(from: Date(timeIntervalSince1970: Double(ayuDetailsMessage.timestamp))), "Ayu/MenuSchedule"))
                 for attribute in ayuDetailsMessage.attributes {
                     if let attribute = attribute as? EditedMessageAttribute, !attribute.isHidden {
-                        lines.append("Edited: \(formatter.string(from: Date(timeIntervalSince1970: Double(attribute.date))))")
-                    } else if let attribute = attribute as? ViewCountMessageAttribute {
-                        lines.append("Views: \(attribute.count)")
-                    } else if let attribute = attribute as? ForwardCountMessageAttribute {
-                        lines.append("Forwards: \(attribute.count)")
+                        ayuMessageRows.append(("Edit Date", ayuFormatter.string(from: Date(timeIntervalSince1970: Double(attribute.date))), "Ayu/MenuEdit"))
+                    } else if let attribute = attribute as? ViewCountMessageAttribute, attribute.count > 0 {
+                        ayuPostRows.append(("Views", "\(attribute.count)", "Ayu/MenuShowInChat"))
+                    } else if let attribute = attribute as? ForwardCountMessageAttribute, attribute.count > 0 {
+                        ayuPostRows.append(("Shares", "\(attribute.count)", "Ayu/MenuViewReplies"))
                     }
                 }
-                if AyuMessagesStore.shared.isDeleted(ayuDetailsMessage.id) {
-                    lines.append("Deleted on the server")
+                if let ayuForwardInfo = ayuDetailsMessage.forwardInfo {
+                    ayuMessageRows.append(("Forward Date", ayuFormatter.string(from: Date(timeIntervalSince1970: Double(ayuForwardInfo.date))), "Ayu/MenuTTL"))
                 }
-                controllerInteraction.presentController(textAlertController(context: context, title: "Details", text: lines.joined(separator: "\n"), actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]), nil)
+
+                for media in ayuDetailsMessage.media {
+                    if let file = media as? TelegramMediaFile {
+                        if let size = file.size {
+                            ayuMediaRows.append(("File Size", ByteCountFormatter.string(fromByteCount: size, countStyle: .file), "Ayu/MenuDownload"))
+                        }
+                        if !file.mimeType.isEmpty {
+                            ayuMediaRows.append(("Mime Type", file.mimeType, "Ayu/MenuShowAll"))
+                        }
+                        if let fileName = file.fileName, !fileName.isEmpty {
+                            ayuMediaRows.append(("File Name", fileName, "Ayu/EditsHistory"))
+                        }
+                        if let dimensions = file.dimensions {
+                            ayuMediaRows.append(("Resolution", "\(dimensions.width)x\(dimensions.height)", "Ayu/MenuStats"))
+                        }
+                        if let resource = file.resource as? CloudDocumentMediaResource {
+                            ayuMediaRows.append(("Datacenter", "\(resource.datacenterId)", "Ayu/MenuBoosts"))
+                        }
+                    } else if let image = media as? TelegramMediaImage, let representation = largestImageRepresentation(image.representations) {
+                        ayuMediaRows.append(("Resolution", "\(representation.dimensions.width)x\(representation.dimensions.height)", "Ayu/MenuStats"))
+                        if let resource = representation.resource as? CloudPhotoSizeMediaResource {
+                            ayuMediaRows.append(("Datacenter", "\(resource.datacenterId)", "Ayu/MenuBoosts"))
+                        }
+                    }
+                }
+
+                ayuPeerRows.append(("Chat ID", "\(ayuDetailsMessage.id.peerId.id._internalGetInt64Value())", "Ayu/MenuInfo"))
+                if let author = ayuDetailsMessage.author {
+                    ayuPeerRows.append(("Sender ID", "\(author.id.id._internalGetInt64Value())", "Ayu/MenuInfo"))
+                }
+
+                var ayuDetailItems: [ContextMenuItem] = []
+                ayuDetailItems.append(.action(ContextMenuActionItem(text: ayuDetailsBackTitle, textColor: .primary, icon: { theme in
+                    return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Back"), color: theme.actionSheet.primaryTextColor)
+                }, iconSource: nil, iconPosition: .left, action: { c, _ in
+                    c?.popItems()
+                })))
+                for ayuGroup in [ayuPostRows, ayuMessageRows, ayuMediaRows, ayuPeerRows] {
+                    if ayuGroup.isEmpty {
+                        continue
+                    }
+                    ayuDetailItems.append(.separator)
+                    for ayuRow in ayuGroup {
+                        let ayuValue = ayuRow.1
+                        let ayuIconName = ayuRow.2
+                        ayuDetailItems.append(.action(ContextMenuActionItem(text: ayuRow.0, textLayout: .secondLineWithValue(ayuValue), icon: { theme in
+                            return generateTintedImage(image: UIImage(bundleImageName: ayuIconName), color: theme.actionSheet.primaryTextColor)
+                        }, action: { _, f in
+                            UIPasteboard.general.string = ayuValue
+                            f(.default)
+                        })))
+                    }
+                }
+                c?.pushItems(items: .single(ContextController.Items(content: .list(ayuDetailItems))))
             })))
             if ayuDetailsVisibility == .extended, let ayuMoved = actions.popLast() {
                 ayuExtendedActions.append(ayuMoved)
