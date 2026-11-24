@@ -1217,14 +1217,17 @@ final class AyuBackgroundKeepAlive: NSObject, CLLocationManagerDelegate {
     private var heartbeat: Foundation.Timer?
     private var pausedForBattery = false
     
-    // Stops the location session below 15% when not charging, and starts it again once that no longer holds.
+    // Stops the location session below the chosen battery level when not charging, and starts it again once that
+    // no longer holds.
     private func checkBattery() {
         guard let manager = self.manager else {
             return
         }
         UIDevice.current.isBatteryMonitoringEnabled = true
         let level = UIDevice.current.batteryLevel
-        let isLow = AyuGramSettings.bool(.pauseKeepAliveOnLowBattery) && level >= 0.0 && level < 0.15 && UIDevice.current.batteryState == .unplugged
+        let threshold = AyuGramSettings.keepAlivePauseBatteryLevel
+        let belowThreshold = threshold >= 96 || level * 100.0 < Float(threshold)
+        let isLow = threshold > 4 && level >= 0.0 && belowThreshold && UIDevice.current.batteryState == .unplugged
         if isLow && !self.pausedForBattery {
             self.pausedForBattery = true
             manager.stopUpdatingLocation()

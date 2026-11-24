@@ -95,6 +95,7 @@ private enum AyuRow: Equatable {
     case value(title: String, label: String, icon: String?, arrow: Bool)
     case action(title: String, destructive: Bool)
     case appIcons(icons: [PresentationAppIcon], current: String?)
+    case batteryLevel(value: Int32)
 }
 
 private final class AyuSettingsArguments {
@@ -104,14 +105,16 @@ private final class AyuSettingsArguments {
     let toggleSubItem: (String, String) -> Void
     let longPressSubItem: (String, String) -> Void
     let selectAppIcon: (PresentationAppIcon) -> Void
+    let updateBatteryLevel: (String, Int32) -> Void
 
-    init(toggle: @escaping (String, Bool) -> Void, activate: @escaping (String) -> Void, toggleExpanded: @escaping (String) -> Void, toggleSubItem: @escaping (String, String) -> Void, longPressSubItem: @escaping (String, String) -> Void, selectAppIcon: @escaping (PresentationAppIcon) -> Void) {
+    init(toggle: @escaping (String, Bool) -> Void, activate: @escaping (String) -> Void, toggleExpanded: @escaping (String) -> Void, toggleSubItem: @escaping (String, String) -> Void, longPressSubItem: @escaping (String, String) -> Void, selectAppIcon: @escaping (PresentationAppIcon) -> Void, updateBatteryLevel: @escaping (String, Int32) -> Void) {
         self.toggle = toggle
         self.activate = activate
         self.toggleExpanded = toggleExpanded
         self.toggleSubItem = toggleSubItem
         self.longPressSubItem = longPressSubItem
         self.selectAppIcon = selectAppIcon
+        self.updateBatteryLevel = updateBatteryLevel
     }
 }
 
@@ -189,6 +192,10 @@ private struct AyuEntry: ItemListNodeEntry {
         case let .appIcons(icons, current):
             return ThemeSettingsAppIconItem(theme: presentationData.theme, strings: presentationData.strings, systemStyle: .glass, sectionId: self.section, icons: icons, isPremium: true, currentIconName: current, updated: { icon in
                 arguments.selectAppIcon(icon)
+            })
+        case let .batteryLevel(value):
+            return EnergyUsageBatteryLevelItem(systemStyle: .glass, theme: presentationData.theme, strings: presentationData.strings, value: value, sectionId: self.section, updated: { value in
+                arguments.updateBatteryLevel(id, value)
             })
         }
     }
@@ -371,7 +378,7 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
             for entry in chatFilters.prefix(100) {
                 b.value("c:\(entry)", String(entry.dropFirst(AyuFilters.chatPrefix.count)), "", arrow: false)
             }
-            b.footer("Filters added for one chat from the message menu, shown as chat ID and expression. Tap one to remove it.")
+            b.footer("Filters added for a single chat. Tap one to remove it.")
         }
 
         b.nextSection()
@@ -527,13 +534,18 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
     case .other:
         b.header("AYUGRAM FOR IOS")
         b.toggle(.keepAliveInBackground, "Stay Connected in Background")
-        b.toggle(.pauseKeepAliveOnLowBattery, "Pause Background Connection Below 15% Battery")
-        b.footer("Staying connected uses location access to keep the app running, so deleted messages are caught while it is closed. It takes effect after a restart and uses more battery.")
+        b.footer("Keeps AyuGram running in the background, so deleted messages are saved even when the app is closed. Needs location access and uses more battery. Takes effect after restarting the app.")
+
+        if AyuGramSettings.bool(.keepAliveInBackground) {
+            b.header("PAUSE ON LOW BATTERY")
+            b.add("keepAliveBattery", .batteryLevel(value: Int32(AyuGramSettings.keepAlivePauseBatteryLevel)))
+            b.footer("Stops staying connected in the background when the battery drops below this level and the device isn't charging.")
+        }
 
         b.nextSection()
         b.toggle(.cleanLinks, "Remove Tracking from Links I Send")
         b.toggle(.cleanLinksStrict, "Strict Link Cleaning")
-        b.footer("Link cleaning only changes text that Telegram recognises as a web link, and never Telegram links or code. Strict cleaning removes every parameter and can break links on sites that need them.")
+        b.footer("Removes tracking from links in messages you send. Strict cleaning removes more and may break some links.")
 
         b.nextSection()
         b.toggle(.allowSavingRestrictedContent, "Allow Copy and Save in Restricted Chats")
@@ -905,6 +917,9 @@ private func ayuGramSettingsPageController(context: AccountContext, page: AyuPag
         currentAppIcon.set(icon.name)
         context.sharedContext.applicationBindings.requestSetAlternateIconName(icon.name, { _ in
         })
+    }, updateBatteryLevel: { _, value in
+        AyuGramSettings.setKeepAlivePauseBatteryLevel(Int(value))
+        bump()
     })
 
     // The profile row of the AyuGram page needs the number of accounts and this account's name.

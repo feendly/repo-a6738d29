@@ -220,6 +220,22 @@ public final class AyuGramSettings {
         return key.defaultValue
     }
 
+    private static let keepAlivePauseBatteryLevelKey = "ayu.keepAlivePauseBatteryLevel"
+
+    /// Battery percentage below which staying connected in the background pauses while not charging.
+    /// 4 or less: never pause; 96 or more: always paused (the ends of the slider). Before the slider existed this
+    /// was a switch for 15%, so an unset value follows that switch.
+    public static var keepAlivePauseBatteryLevel: Int {
+        if let value = defaults.object(forKey: keepAlivePauseBatteryLevelKey) as? Int {
+            return value
+        }
+        return bool(.pauseKeepAliveOnLowBattery) ? 15 : 0
+    }
+
+    public static func setKeepAlivePauseBatteryLevel(_ value: Int) {
+        defaults.set(max(0, min(100, value)), forKey: keepAlivePauseBatteryLevelKey)
+    }
+
     public static func setBool(_ key: BoolKey, _ value: Bool) {
         defaults.set(value, forKey: effectiveStorageKey(key))
         if key == .hideNotificationBadge {
