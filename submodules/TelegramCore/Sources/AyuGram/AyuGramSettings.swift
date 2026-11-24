@@ -97,6 +97,17 @@ public final class AyuGramSettings {
         case showMessageShotInContextMenu
         case useGlobalGhostMode
         case roundConfirmation
+        // From Swiftgram and Nicegram
+        case doubleTapToEdit
+        case sendWithReturnKey
+        case hideSendAsButton
+        case disableDeleteAnimation
+        case disablePullToNextChannel
+        case standardEmojiFirst
+        case localTranscription
+        case showSaveToSavedInContextMenu
+        case showSelectFromUserInContextMenu
+        case showReplyPrivatelyInContextMenu
 
         public var defaultValue: Bool {
             switch self {
@@ -161,6 +172,10 @@ public final class AyuGramSettings {
             case .showLReadToggleInDrawer, .showStreamerToggleInDrawer:
                 return false
             case .showSReadToggleInDrawer, .showGhostToggleInDrawer, .suggestGhostModeBeforeViewingStory, .collapseSimilarChannels, .channelBottomButtonDiscuss, .showAiEditorButtonInMessageField, .replaceBottomInfoWithIcons, .quickAdminShortcuts, .showMessageShotInContextMenu, .useGlobalGhostMode:
+                return true
+            case .doubleTapToEdit, .sendWithReturnKey, .hideSendAsButton, .disableDeleteAnimation, .disablePullToNextChannel, .standardEmojiFirst, .localTranscription:
+                return false
+            case .showSaveToSavedInContextMenu, .showSelectFromUserInContextMenu, .showReplyPrivatelyInContextMenu:
                 return true
             case .unlimitedRecentStickers, .showOnlyAddedEmojisAndStickers, .hideFromBlocked, .cleanLinks, .cleanLinksStrict, .hideAllChatsFolder, .spoofWebviewAsAndroid, .channelBottomButtonHidden, .singleCornerRadius, .simpleQuotesAndReplies, .improveLinkPreviews:
                 return false
@@ -331,7 +346,7 @@ public final class AyuGramSettings {
 
     private static func defaultContextMenuVisibility(_ key: BoolKey) -> ContextMenuVisibility {
         switch key {
-        case .showUserMessagesInContextMenu, .showMessageDetailsInContextMenu:
+        case .showUserMessagesInContextMenu, .showMessageDetailsInContextMenu, .showSaveToSavedInContextMenu, .showSelectFromUserInContextMenu, .showReplyPrivatelyInContextMenu:
             return .extended
         case .showHideMessageInContextMenu, .showRepeatMessageInContextMenu:
             return .hidden

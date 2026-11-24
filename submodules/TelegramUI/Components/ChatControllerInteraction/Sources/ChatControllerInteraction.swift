@@ -363,6 +363,8 @@ public final class ChatControllerInteraction: ChatControllerInteractionProtocol 
     public var seenOneTimeAnimatedMedia = Set<EngineMessage.Id>()
     public var freshWalletTransferMessageIds = Set<EngineMessage.Id>()
     public var requestWalletTransferArrival: ((EngineRawMessage) -> Void)?
+    /// AyuGram: opens an outgoing message for editing (double tap with "Double-Tap to Edit" on).
+    public var ayuStartMessageEdit: ((EngineRawMessage) -> Void)?
     public var walletTransferArrivalState: ((EngineMessage.Id) -> WalletTransferArrivalState?)?
     public var cancelWalletTransferArrival: ((EngineMessage.Id) -> Void)?
     public var currentMessageWithLoadingReplyThread: EngineMessage.Id?

@@ -110,6 +110,15 @@ public func transcribeAudio(path: String, appLocale: String) -> Signal<LocallyTr
     if !locales.contains(Locale.current.identifier) {
         locales.append(Locale.current.identifier)
     }
+    // AyuGram: also try the user's other preferred languages (up to three in all); the most confident result wins
+    for language in Locale.preferredLanguages {
+        if locales.count >= 3 {
+            break
+        }
+        if !locales.contains(language) && !locales.contains(where: { $0.hasPrefix(String(language.prefix(2))) }) {
+            locales.append(language)
+        }
+    }
     if locales.isEmpty {
         locales.append("en-US")
     }

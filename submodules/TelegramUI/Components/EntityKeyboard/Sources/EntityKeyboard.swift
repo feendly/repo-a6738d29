@@ -578,6 +578,11 @@ public final class EntityKeyboardComponent: Component {
             
             let emojiContentItemIdUpdated = ActionSlot<(AnyHashable, AnyHashable?, ComponentTransition)>()
             if let emojiContent = component.emojiContent {
+                // AyuGram: Standard Emoji First (the "static" group right after Recent)
+                if AyuGramSettings.bool(.standardEmojiFirst) {
+                    emojiContent.panelItemGroups = ayuStandardEmojiFirst(emojiContent.panelItemGroups)
+                    emojiContent.contentItemGroups = ayuStandardEmojiFirst(emojiContent.contentItemGroups)
+                }
                 contents.append(AnyComponentWithIdentity(id: "emoji", component: AnyComponent(emojiContent)))
                 var topEmojiItems: [EntityKeyboardTopPanelComponent.Item] = []
                 for itemGroup in emojiContent.panelItemGroups {
@@ -1035,4 +1040,16 @@ public final class EntityKeyboardComponent: Component {
     public func update(view: View, availableSize: CGSize, state: EmptyComponentState, environment: Environment<Empty>, transition: ComponentTransition) -> CGSize {
         return view.update(component: self, availableSize: availableSize, state: state, environment: environment, transition: transition)
     }
+}
+
+/// AyuGram: moves the standard emoji group right after Recent, before custom emoji packs.
+private func ayuStandardEmojiFirst(_ groups: [EmojiPagerContentComponent.ItemGroup]) -> [EmojiPagerContentComponent.ItemGroup] {
+    var groups = groups
+    guard let staticIndex = groups.firstIndex(where: { ($0.groupId.base as? String) == "static" }) else {
+        return groups
+    }
+    let staticGroup = groups.remove(at: staticIndex)
+    let recentIndex = groups.firstIndex(where: { ($0.groupId.base as? String) == "recent" })
+    groups.insert(staticGroup, at: (recentIndex ?? -1) + 1)
+    return groups
 }

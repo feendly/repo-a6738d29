@@ -295,3 +295,24 @@ func ayuDropHistoryClearOverKept(transaction: Transaction, messages: [StoreMessa
         return true
     }
 }
+
+/// The newest `limit` messages of `authorId` stored in this chat (service messages left out), oldest first,
+/// for "Select from User".
+public func ayuMessageIdsFromAuthor(account: Account, peerId: EnginePeer.Id, authorId: EnginePeer.Id, threadId: Int64?, limit: Int) -> Signal<[EngineMessage.Id], NoError> {
+    return account.postbox.transaction { transaction -> [EngineMessage.Id] in
+        var result: [EngineMessage.Id] = []
+        transaction.withAllMessages(peerId: peerId, { candidate in
+            if candidate.author?.id == authorId && !candidate.media.contains(where: { $0 is TelegramMediaAction }) {
+                if threadId == nil || candidate.threadId == threadId {
+                    result.append(candidate.id)
+                }
+            }
+            return true
+        })
+        if result.count > limit {
+            result = Array(result.suffix(limit))
+        }
+        return result
+    }
+}
+

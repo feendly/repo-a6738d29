@@ -266,6 +266,9 @@ private let ayuContextMenuRows: [(key: AyuGramSettings.BoolKey, title: String, i
     (key: .showUserMessagesInContextMenu, title: "User Messages", icon: "Ayu/MenuTTL", extendable: true),
     (key: .showMessageDetailsInContextMenu, title: "Details", icon: "Ayu/MenuInfo", extendable: true),
     (key: .showRepeatMessageInContextMenu, title: "Repeat Message", icon: "Ayu/Repeat", extendable: true),
+    (key: .showSaveToSavedInContextMenu, title: "Save to Saved Messages", icon: "Chat/Context Menu/Fave", extendable: true),
+    (key: .showSelectFromUserInContextMenu, title: "Select from User", icon: "Chat/Context Menu/SelectAll", extendable: true),
+    (key: .showReplyPrivatelyInContextMenu, title: "Reply Privately", icon: "Chat/Context Menu/Reply", extendable: true),
     (key: .showAddFilterInContextMenu, title: "Add Filter", icon: "Ayu/MenuAddToFolder", extendable: true)
 ]
 
@@ -418,6 +421,10 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
         b.header("TRANSLATE MESSAGES")
         b.value("translator", "Translation Provider", AyuTranslator.provider.title)
 
+        b.header("VOICE MESSAGES")
+        b.toggle(.localTranscription, "Voice-to-Text on Device")
+        b.footer("Transcribes voice messages on your device, without Telegram Premium. Asks for speech recognition access the first time.")
+
         b.header("GENERAL")
         b.toggle(.disableStories, "Disable Stories")
         b.toggle(.disableOpenLinkWarning, "Disable Open Link Warning")
@@ -482,6 +489,7 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
         b.header("STICKERS AND EMOJI")
         b.toggle(.showOnlyAddedEmojisAndStickers, "Show Only Added Emojis & Stickers")
         b.toggle(.unlimitedRecentStickers, "Unlimited Recent Stickers")
+        b.toggle(.standardEmojiFirst, "Standard Emoji First")
         let hideChannelReactions = !AyuGramSettings.bool(.showChannelReactions)
         let hideGroupReactions = !AyuGramSettings.bool(.showGroupReactions)
         let hidePrivateReactions = !AyuGramSettings.bool(.showPrivateChatReactions)
@@ -508,6 +516,14 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
         b.toggle(.hideFastShare, "Hide Side \"Share\" Button")
         b.toggle(.simpleQuotesAndReplies, "Disable Colorful Replies")
         b.toggle(.semiTransparentDeletedMessages, "Translucent Deleted Messages")
+        b.toggle(.doubleTapToEdit, "Double-Tap to Edit")
+        b.toggle(.disableDeleteAnimation, "Disable Delete Animation")
+        b.toggle(.disablePullToNextChannel, "Disable Pull to Next Channel")
+        b.footer("Double-tapping your own message opens it for editing instead of adding a reaction.")
+
+        b.header("MESSAGE FIELD")
+        b.toggle(.sendWithReturnKey, "Send with Return Key")
+        b.toggle(.hideSendAsButton, "Hide \"Send As\" Button")
 
         b.header("CONTEXT MENU ELEMENTS")
         for row in ayuContextMenuRows {

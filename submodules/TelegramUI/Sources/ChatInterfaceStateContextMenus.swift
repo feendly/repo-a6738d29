@@ -27,6 +27,7 @@ import TelegramUIPreferences
 import TranslateUI
 import DebugSettingsUI
 import ChatPresentationInterfaceState
+import ChatInterfaceState
 import Pasteboard
 import BrowserUI
 import ChatRichTextEditorComposer
@@ -1490,6 +1491,69 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                 }).startStandalone()
             })))
             if ayuRepeatVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
+        }
+
+        // AyuGram: Save to Saved Messages in one tap (Swiftgram, Nicegram)
+        let ayuSaveVisibility = AyuGramSettings.contextMenuVisibility(.showSaveToSavedInContextMenu)
+        if ayuSaveVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud && message.id.peerId != context.account.peerId && !message.media.contains(where: { $0 is TelegramMediaAction }) {
+            let ayuSaveIds = (selectAll ? messages : [message]).map { $0.id }
+            actions.append(.action(ContextMenuActionItem(text: "Save to Saved Messages", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Fave"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                let _ = enqueueMessages(account: context.account, peerId: context.account.peerId, messages: ayuSaveIds.map { ayuId -> EnqueueMessage in
+                    return .forward(source: ayuId, threadId: nil, grouping: .auto, attributes: [], correlationId: nil)
+                }).startStandalone()
+                controllerInteraction.displayUndo(.info(title: nil, text: "Saved to Saved Messages.", timeout: nil, customUndoText: nil))
+            })))
+            if ayuSaveVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
+        }
+
+        // AyuGram: select this author's messages in the chat, up to 500 (Swiftgram, Nicegram)
+        let ayuSelectVisibility = AyuGramSettings.contextMenuVisibility(.showSelectFromUserInContextMenu)
+        if ayuSelectVisibility != .hidden, let ayuSelectAuthorId = message.author?.id, message.id.peerId.namespace != Namespaces.Peer.CloudUser {
+            let ayuSelectPeerId = message.id.peerId
+            let ayuSelectThreadId: Int64?
+            if case let .replyThread(replyThreadMessage) = chatPresentationInterfaceState.chatLocation {
+                ayuSelectThreadId = replyThreadMessage.threadId
+            } else {
+                ayuSelectThreadId = nil
+            }
+            actions.append(.action(ContextMenuActionItem(text: "Select from User", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/SelectAll"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                let _ = (ayuMessageIdsFromAuthor(account: context.account, peerId: ayuSelectPeerId, authorId: ayuSelectAuthorId, threadId: ayuSelectThreadId, limit: 500)
+                |> deliverOnMainQueue).startStandalone(next: { ids in
+                    interfaceInteraction.beginMessageSelection(ids, { transition in
+                        f(.custom(transition))
+                    })
+                })
+            })))
+            if ayuSelectVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
+        }
+
+        // AyuGram: reply to a group message in a private chat with its author (Nicegram)
+        let ayuReplyPrivatelyVisibility = AyuGramSettings.contextMenuVisibility(.showReplyPrivatelyInContextMenu)
+        if ayuReplyPrivatelyVisibility != .hidden, message.id.namespace == Namespaces.Message.Cloud, message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuReplyAuthor = message.author as? TelegramUser, ayuReplyAuthor.id != context.account.peerId {
+            let ayuReplyMessageId = message.id
+            actions.append(.action(ContextMenuActionItem(text: "Reply Privately", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Reply"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                let _ = (ChatInterfaceState.update(engine: context.engine, peerId: ayuReplyAuthor.id, threadId: nil, { current in
+                    return current.withUpdatedReplyMessageSubject(ChatInterfaceState.ReplyMessageSubject(messageId: ayuReplyMessageId, quote: nil, innerSubject: nil))
+                })
+                |> deliverOnMainQueue).startStandalone(completed: {
+                    controllerInteraction.openPeer(EnginePeer(ayuReplyAuthor), .chat(textInputState: nil, subject: nil, peekData: nil), nil, .default)
+                })
+            })))
+            if ayuReplyPrivatelyVisibility == .extended, let ayuMoved = actions.popLast() {
                 ayuExtendedActions.append(ayuMoved)
             }
         }
