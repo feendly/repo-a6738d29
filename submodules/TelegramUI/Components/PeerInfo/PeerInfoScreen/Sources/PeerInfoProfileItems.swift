@@ -19,7 +19,10 @@ import BoostLevelIconComponent
 import UndoUI
 
 private let enabledPublicBioEntities: EnabledEntityTypes = [.allUrl, .mention, .hashtag]
-private let enabledPrivateBioEntities: EnabledEntityTypes = [.internalUrl, .mention, .hashtag]
+// AyuGram: Clickable Links in Bios (stock only links Telegram URLs in private users' bios)
+private var enabledPrivateBioEntities: EnabledEntityTypes {
+    return AyuGramSettings.bool(.clickableBioLinks) ? [.allUrl, .mention, .hashtag] : [.internalUrl, .mention, .hashtag]
+}
 
 // AyuGram: desktop labels the ID row with the datacenter of the profile photo ("ID" without a photo)
 private func ayuIdRowLabel(_ photo: [TelegramMediaImageRepresentation]) -> String {

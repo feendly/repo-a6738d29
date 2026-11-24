@@ -1010,6 +1010,26 @@ public final class AccountContextImpl: AccountContext {
     }
     
     public func requestCall(peerId: EnginePeer.Id, isVideo: Bool, completion: @escaping () -> Void) {
+        // AyuGram: Confirm Calls (Swiftgram, Nicegram)
+        guard AyuGramSettings.bool(.confirmCalls) else {
+            self.ayuPerformRequestCall(peerId: peerId, isVideo: isVideo, completion: completion)
+            return
+        }
+        let _ = (self.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
+        |> deliverOnMainQueue).start(next: { [weak self] peer in
+            guard let self else {
+                return
+            }
+            let presentationData = self.sharedContext.currentPresentationData.with { $0 }
+            let name = peer?.compactDisplayTitle ?? ""
+            let title = isVideo ? "Video call \(name)?" : "Call \(name)?"
+            self.sharedContext.mainWindow?.present(textAlertController(context: self, title: nil, text: title, actions: [TextAlertAction(type: .genericAction, title: presentationData.strings.Common_Cancel, action: {}), TextAlertAction(type: .defaultAction, title: "Call", action: { [weak self] in
+                self?.ayuPerformRequestCall(peerId: peerId, isVideo: isVideo, completion: completion)
+            })]), on: .root)
+        })
+    }
+    
+    private func ayuPerformRequestCall(peerId: EnginePeer.Id, isVideo: Bool, completion: @escaping () -> Void) {
         guard let callResult = self.sharedContext.callManager?.requestCall(context: self, peerId: peerId, isVideo: isVideo, endCurrentIfAny: false) else {
             return
         }

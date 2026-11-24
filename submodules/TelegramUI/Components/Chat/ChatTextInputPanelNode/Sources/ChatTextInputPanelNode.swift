@@ -5747,8 +5747,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         self.updateActivity()
         
         // AyuGram: Send with Return Key
-        if AyuGramSettings.bool(.sendWithReturnKey) && text == "
-" {
+        if AyuGramSettings.bool(.sendWithReturnKey) && text == "\n" {
             self.sendButtonPressed()
             return false
         }

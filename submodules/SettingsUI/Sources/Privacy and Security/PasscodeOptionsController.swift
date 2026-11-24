@@ -248,7 +248,9 @@ private struct PasscodeOptionsData: Equatable {
 
 private func autolockStringForTimeout(strings: PresentationStrings, timeout: Int32?) -> String {
     if let timeout = timeout {
-        if timeout == 10 {
+        if timeout == 1 {
+            return "Immediately"
+        } else if timeout == 10 {
             return "If away for 10 seconds"
         } else if timeout == 1 * 60 {
             return strings.PasscodeSettings_AutoLock_IfAwayFor_1minute
@@ -634,12 +636,8 @@ public func passcodeOptionsController(context: AccountContext, focusOnItemTag: P
                 }).start()
             })
         }
-        var values: [Int32] = [0, 1 * 60, 5 * 60, 1 * 60 * 60, 5 * 60 * 60]
-        
-        #if DEBUG
-            values.append(10)
-            values.sort()
-        #endif
+        // AyuGram: "Immediately" and 10 seconds as well (Swiftgram, Nicegram)
+        let values: [Int32] = [0, 1, 10, 1 * 60, 5 * 60, 1 * 60 * 60, 5 * 60 * 60]
         
         var items: [ContextMenuItem] = []
         for value in values {

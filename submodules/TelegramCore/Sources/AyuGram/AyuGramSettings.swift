@@ -108,6 +108,9 @@ public final class AyuGramSettings {
         case showSaveToSavedInContextMenu
         case showSelectFromUserInContextMenu
         case showReplyPrivatelyInContextMenu
+        case rememberLastFolder
+        case confirmCalls
+        case clickableBioLinks
 
         public var defaultValue: Bool {
             switch self {
@@ -175,8 +178,10 @@ public final class AyuGramSettings {
                 return true
             case .doubleTapToEdit, .sendWithReturnKey, .hideSendAsButton, .disableDeleteAnimation, .disablePullToNextChannel, .standardEmojiFirst, .localTranscription:
                 return false
-            case .showSaveToSavedInContextMenu, .showSelectFromUserInContextMenu, .showReplyPrivatelyInContextMenu:
+            case .showSaveToSavedInContextMenu, .showSelectFromUserInContextMenu, .showReplyPrivatelyInContextMenu, .clickableBioLinks:
                 return true
+            case .rememberLastFolder, .confirmCalls:
+                return false
             case .unlimitedRecentStickers, .showOnlyAddedEmojisAndStickers, .hideFromBlocked, .cleanLinks, .cleanLinksStrict, .hideAllChatsFolder, .spoofWebviewAsAndroid, .channelBottomButtonHidden, .singleCornerRadius, .simpleQuotesAndReplies, .improveLinkPreviews:
                 return false
             }

@@ -428,6 +428,8 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
         b.header("GENERAL")
         b.toggle(.disableStories, "Disable Stories")
         b.toggle(.disableOpenLinkWarning, "Disable Open Link Warning")
+        b.toggle(.clickableBioLinks, "Clickable Links in Bios")
+        b.toggle(.confirmCalls, "Confirm Before Calling")
         let collapseSimilar = AyuGramSettings.bool(.collapseSimilarChannels)
         let hideSimilar = AyuGramSettings.bool(.hideSimilarChannels)
         b.add("similar", .expandable(title: "Disable Similar Channels", value: collapseSimilar && hideSimilar, expanded: state.expanded.contains("similar"), subItems: [
@@ -477,6 +479,7 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
         b.header("CHAT FOLDERS")
         b.toggle(.hideNotificationCounters, "Hide Notification Counters")
         b.toggle(.hideAllChatsFolder, "Hide \"All Chats\" Tab")
+        b.toggle(.rememberLastFolder, "Open Last Folder")
 
         b.header("DRAWER ELEMENTS")
         b.toggle(.showLReadToggleInDrawer, "Read on Local", icon: "Ayu/LRead")

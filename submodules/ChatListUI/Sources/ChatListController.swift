@@ -814,6 +814,17 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 if let navigationBarView = strongSelf.chatListDisplayNode.navigationBarView.view as? ChatListNavigationBar.View, let headerPanelsView = navigationBarView.headerPanels as? HeaderPanelContainerComponent.View, let tabsView = headerPanelsView.tabs as? HorizontalTabsComponent.View {
                     tabsView.updateTabSwitchFraction(fraction: fraction, isDragging: strongSelf.chatListDisplayNode.mainContainerNode.isSwitchingCurrentItemFilterByDragging, transition: ComponentTransition(transition))
                 }
+                // AyuGram: Open Last Folder
+                if AyuGramSettings.bool(.rememberLastFolder) {
+                    let ayuFolderId: Int
+                    switch filter {
+                    case let .filter(id):
+                        ayuFolderId = Int(id)
+                    case .all:
+                        ayuFolderId = -1
+                    }
+                    UserDefaults.standard.set(ayuFolderId, forKey: "ayu.lastFolder.\(strongSelf.context.account.peerId.toInt64())")
+                }
             }
             self.reloadFilters()
         }
@@ -837,6 +848,16 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         })
         
         self.updateNavigationMetadata()
+        
+        // AyuGram: Open Last Folder
+        if case .chatList(.root) = self.location, AyuGramSettings.bool(.rememberLastFolder), let ayuLastFolder = UserDefaults.standard.object(forKey: "ayu.lastFolder.\(self.context.account.peerId.toInt64())") as? Int, ayuLastFolder != -1 {
+            let _ = (self.ready.get()
+            |> filter { $0 }
+            |> take(1)
+            |> deliverOnMainQueue).startStandalone(next: { [weak self] _ in
+                self?.selectTab(id: .filter(Int32(ayuLastFolder)), switchToChatsIfNeeded: false)
+            })
+        }
         
         self.globalControlPanelsContextStateDisposable = (self.globalControlPanelsContext.state
         |> deliverOnMainQueue).startStrict(next: { [weak self] state in
