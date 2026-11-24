@@ -186,6 +186,7 @@ A feature counts as done only when its row says PASS.
 | 161 | Basic group ID | run 45315696806 | luki opens the info of the basic group "Test"; same on desktop | ID in the chosen form, as on desktop | iPad "-5108787575" (Bot API form); desktop shows the same. Desktop also has a creation-date button beside it, not ported | PASS |
 | 162 | Seconds in last seen | run 45315696806 | Show Message Seconds on; look for a last-seen time | "last seen at h:mm:ss" | Not observable: nash and luki each show "last seen recently" to the other and nash has no contacts | NOT RUN |
 | 163 | Read time in the message menu | run 45315696806 | Show Message Seconds on; on nash hold a message luki has read | Read time with seconds, as on desktop (api/api_who_reacted.cpp:751) | "read yesterday at 6:43 PM", no seconds. Read, edited and sent times in the menu and the group reader list get seconds in the next build | FAIL, retest |
+| 164 | Battery slider and plainer descriptions | run 45342766253 | Open AyuGram settings, Other page; drag the Pause on Low Battery slider to the left end, then back | Slider replaces the clipped switch, labels Off / When Below N% / On; value saved | Section shows "When Below 15%" at first; left end shows "Always Off" and saves 4 (never pause); dragged back, shows and saves 15. New descriptions shown for Stay Connected and link cleaning | PASS |
 
 ## Notes
 

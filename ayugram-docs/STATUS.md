@@ -216,7 +216,7 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 
 | Feature | Status | Notes |
 |---|---|---|
-| Stay Connected in Background | TESTED | Kept a deletion sent from another device while the app was in the background (TESTING row 43). Shows the system location indicator |
+| Stay Connected in Background | TESTED | Kept a deletion sent from another device while the app was in the background (TESTING row 43). Shows the system location indicator. "Pause on Low Battery" is a slider (Off, When Below N%, On; default 15%), stored as `ayu.keepAlivePauseBatteryLevel`; an unset value follows the old 15% switch (TESTING row 164). The pause itself at low battery was not tried |
 | All accounts receive updates at once | TESTED | Part of keep-alive. Seen in TESTING row 114: nash received luki's message and kept its deletion while luki was the account in front |
 | Debug log and test override files | TESTED | Test aids; to be removed or hidden before release |
 | Link cleaner for outgoing messages | TESTED | Requested by the user 2026-11-12. "Remove Tracking from Links I Send" drops known tracking parameters; "Strict Link Cleaning" drops every parameter a site does not need and the fragment, after Link Cleaner (corbindavenport/link-cleaner-js, MIT). Only text the system link detector recognises as a web link is changed, bare domains included; Telegram links and code are left alone. Edited messages are not covered |
