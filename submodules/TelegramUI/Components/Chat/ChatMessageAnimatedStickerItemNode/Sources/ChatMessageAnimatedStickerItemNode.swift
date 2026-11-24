@@ -2025,6 +2025,8 @@ public class ChatMessageAnimatedStickerItemNode: ChatMessageItemView {
                     strongSelf.forwardInfoNode?.alpha = panelsAlpha
                     strongSelf.replyBackgroundContent?.alpha = panelsAlpha
                     strongSelf.forwardBackgroundContent?.alpha = panelsAlpha
+                    // AyuGram: Translucent Deleted Messages covers stickers too, as on desktop
+                    strongSelf.contextSourceNode.contentNode.alpha = (AyuGramSettings.bool(.semiTransparentDeletedMessages) && AyuMessagesStore.shared.isDeleted(item.message.id)) ? 0.7 : 1.0
                     strongSelf.updateBubblelessInfoPlates(isGlass: !item.presentationData.chatBubbleCorners.bubbleMode, replyFrame: replyBackgroundFrame, forwardFrame: forwardBackgroundFrame, alpha: panelsAlpha, isDark: item.presentationData.theme.theme.overallDarkAppearance)
                     
                     if isFailed {

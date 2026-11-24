@@ -82,8 +82,14 @@ func managedAutoremoveMessageOperations(network: Network, postbox: Postbox, isRe
                     Logger.shared.log("Autoremove", "Performing autoremove for \(entry.messageId), isRemove: \(isRemove)")
 
                     if let message = transaction.getMessage(entry.messageId) {
-                        if message.id.peerId.namespace == Namespaces.Peer.SecretChat || isRemove {
+                        if message.id.peerId.namespace == Namespaces.Peer.SecretChat {
                             _internal_deleteMessages(transaction: transaction, mediaBox: postbox.mediaBox, ids: [entry.messageId])
+                        } else if isRemove {
+                            // AyuGram: a message removed by the chat's auto-delete timer is kept as deleted, as on desktop
+                            let ayuIdsToDelete = ayuKeepRemotelyDeletedMessages(transaction: transaction, ids: [entry.messageId])
+                            if !ayuIdsToDelete.isEmpty {
+                                _internal_deleteMessages(transaction: transaction, mediaBox: postbox.mediaBox, ids: ayuIdsToDelete)
+                            }
                         } else if AyuGramSettings.keepSelfDestructingMedia {
                             // AyuGram: keep view-once and self-destructing media
                             AyuGramSettings.debugLog("self-destruct kept message=\(entry.messageId.peerId.toInt64())/\(entry.messageId.id)")

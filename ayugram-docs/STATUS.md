@@ -133,7 +133,7 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | singleCornerRadius | off | TESTED | "Round Avatars for Forums Too": forum chats use the same avatar shape as other chats; restart to apply (TESTING row 131) |
 | materialSwitches | on | N/A | iOS uses system switches |
 | simpleQuotesAndReplies | off | TESTED | Reply, quote and link preview blocks lose the fill and emoji pattern; the side line stays (run 43536445199, checked on a link preview) |
-| replaceBottomInfoWithIcons | on | UNTESTED | "Replace with Icons": desktop's bin and pencil, tinted like the time. Run 45291403361 drew the pencil on deleted messages too (TESTING row 150); fixed in commit d713406a |
+| replaceBottomInfoWithIcons | on | TESTED | "Replace with Icons": desktop's bin and pencil, tinted like the time (TESTING row 153). The edited mark sits between an author signature and the time, as on desktop (not yet seen on a signed channel post) |
 | adaptiveCoverColor | on | N/A | NOT PORTED, FOR THE USER TO CONFIRM: tints desktop AyuGram's own profile-music button with the cover's colour. iOS shows profile music with the stock design, which has no such button (see Saved music) |
 | improveLinkPreviews | off | TESTED | Previews for X, TikTok, Reddit, Instagram and Pixiv links are requested from the mirror hosts desktop uses; the message text keeps the original link (run 43561780256) |
 | hideFastShare | off | TESTED | Share arrow next to channel posts gone |

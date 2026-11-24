@@ -917,6 +917,17 @@ func infoItems(
                 }))
             }
         }
+        // AyuGram: basic group ID in the form chosen in settings; tapping copies it.
+        let ayuGroupIdDisplay = AyuGramSettings.peerIdDisplay
+        if ayuGroupIdDisplay != .hidden {
+            let ayuRawId = group.id.id._internalGetInt64Value()
+            let ayuIdText = ayuGroupIdDisplay == .botApi ? "-\(ayuRawId)" : "\(ayuRawId)"
+            items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: "ID", text: ayuIdText, textColor: .primary, action: { _, _ in
+                UIPasteboard.general.string = ayuIdText
+            }, longTapAction: nil, contextAction: nil, requestLayout: { animated in
+                interaction.requestLayout(animated)
+            }))
+        }
     }
     
     if let peer = data.peer, let members = data.members, case let .shortList(_, memberList) = members {
