@@ -266,6 +266,18 @@ public class ChatMessageActionBubbleContentNode: ChatMessageBubbleContentNode {
                 
                 let primaryTextColor = serviceMessageColorComponents(theme: item.presentationData.theme.theme, wallpaper: item.presentationData.theme.wallpaper).primaryText
                 
+                // AyuGram: the time after the text of a service message, as on desktop
+                if suggestedPost == nil, let currentString = updatedAttributedString, currentString.length > 0, item.message.timestamp > 0 {
+                    var ayuTime = time_t(item.message.timestamp)
+                    var ayuTimeInfo = tm()
+                    localtime_r(&ayuTime, &ayuTimeInfo)
+                    let ayuTimeText = stringForShortTimestamp(hours: Int32(ayuTimeInfo.tm_hour), minutes: Int32(ayuTimeInfo.tm_min), seconds: AyuGramSettings.bool(.showMessageSeconds) ? Int32(ayuTimeInfo.tm_sec) : nil, dateTimeFormat: item.presentationData.dateTimeFormat)
+                    let ayuTimeColor = (currentString.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor) ?? primaryTextColor
+                    let mutableString = NSMutableAttributedString(attributedString: currentString)
+                    mutableString.append(NSAttributedString(string: "  " + ayuTimeText, font: Font.regular(11.0), textColor: ayuTimeColor.withAlphaComponent(0.7)))
+                    updatedAttributedString = mutableString
+                }
+                
                 if let suggestedPost {
                     textAlignment = .left
                     

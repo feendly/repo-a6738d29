@@ -558,6 +558,14 @@ public final class AyuGramSettings {
         }
     }
 
+    /// The data of a bot's callback button as text, for desktop's "Copy Callback Data".
+    public static func callbackDataText(_ action: ReplyMarkupButtonAction) -> String? {
+        if case let .callback(_, data) = action {
+            return String(decoding: data.makeData(), as: UTF8.self)
+        }
+        return nil
+    }
+
     /// Send without Sound makes silent sending the default right now (Always, or When using Ghost Mode while it is on).
     public static var sendsWithoutSoundByDefault: Bool {
         return bool(.sendWithoutSoundAlways) || (bool(.sendWithoutSoundInGhost) && isGhostModeActive)
@@ -869,6 +877,15 @@ public final class AyuFilters {
         if !AyuGramSettings.bool(.filtersEnabled) || !message.flags.contains(.Incoming) {
             return false
         }
+        if isFilteredByRules(message) {
+            noteFiltered(message.id)
+            // Show Filtered: this chat's filtered messages are shown until hidden again
+            return !isShowingFiltered(peerId: message.id.peerId.toInt64())
+        }
+        return false
+    }
+
+    private static func isFilteredByRules(_ message: Message) -> Bool {
         var isBroadcast = false
         if let channel = message.peers[message.id.peerId] as? TelegramChannel, case .broadcast = channel.info {
             isBroadcast = true
@@ -890,5 +907,48 @@ public final class AyuFilters {
             return true
         }
         return false
+    }
+
+    // MARK: Show Filtered
+
+    private static let shownLock = NSLock()
+    private static var showingFilteredPeerIds = Set<Int64>()
+    private static var filteredIdsByPeer: [Int64: Set<MessageId>] = [:]
+
+    private static func noteFiltered(_ id: MessageId) {
+        shownLock.lock()
+        filteredIdsByPeer[id.peerId.toInt64(), default: Set()].insert(id)
+        shownLock.unlock()
+    }
+
+    public static func isShowingFiltered(peerId: Int64) -> Bool {
+        shownLock.lock()
+        defer {
+            shownLock.unlock()
+        }
+        return showingFilteredPeerIds.contains(peerId)
+    }
+
+    /// The chat has messages hidden by filters (desktop offers Show Filtered only then).
+    public static func hasFilteredMessages(peerId: Int64) -> Bool {
+        shownLock.lock()
+        defer {
+            shownLock.unlock()
+        }
+        return !(filteredIdsByPeer[peerId]?.isEmpty ?? true)
+    }
+
+    /// Toggles Show Filtered for the chat and returns the messages to redraw.
+    public static func toggleShowingFiltered(peerId: Int64) -> [MessageId] {
+        shownLock.lock()
+        defer {
+            shownLock.unlock()
+        }
+        if showingFilteredPeerIds.contains(peerId) {
+            showingFilteredPeerIds.remove(peerId)
+        } else {
+            showingFilteredPeerIds.insert(peerId)
+        }
+        return Array(filteredIdsByPeer[peerId] ?? Set())
     }
 }

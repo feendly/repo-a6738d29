@@ -40,11 +40,19 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 - Differences kept on purpose: the profile picker is a row ("Global Settings" or this account); Avatar Corners is
   Circle or Square, not a slider; a locked Ghost Mode option shows a lock symbol instead of being dimmed; the
   History screen is a sheet; Shot and Shadow Ban are message-menu items.
-- Not ported yet (desktop has them): View Deleted, Show/Hide Filtered, Delete own messages, Open Channel, Burn,
-  Copy Callback Data, Pack Owner in Details, the burnt-media icon beside the time, the deleted mark on service
-  messages, AyuGram items in forum-topic menus, translucent deleted stickers and round videos, peer names and an
-  add button in the Shadow Ban list, Select Chat for per-chat filters, and the AyuGram logo as the default app icon
-  (the app still starts with Telegram's icon; the AyuGram icons are in Appearance).
+- Chat menu (hold the chat's avatar), as on desktop: AyuGram submenu with View Filters and Clear Deleted, To
+  Beginning (TESTING row 155). From the build after commit b0751176 (untested): View Deleted (a sheet of the chat's
+  kept deleted messages, newest first, each with Show in Chat; desktop opens a page of them) and Show Filtered / Hide
+  Filtered in the AyuGram submenu, the latter when the chat has filtered messages; Open Channel in a supergroup with a linked channel;
+  Shadow Ban / Unshadow Ban for a user under Enable Filters; Delete own messages (with desktop's confirmation) in a
+  group you are in.
+- Copy Callback Data: a long press on a bot's callback button copies its data (desktop: an item in the button's
+  context menu), from the build after commit b0751176 (untested).
+- Not ported yet (desktop has them): Burn, Pack Owner in Details, the
+  burnt-media icon beside the time, the deleted mark on service messages, AyuGram items in forum-topic menus,
+  dimmed deleted round videos, peer names and an add button in the Shadow Ban list, Select Chat for per-chat
+  filters, and the AyuGram logo as the default app icon (the app still starts with Telegram's icon; the AyuGram
+  icons are in Appearance).
 
 ## Ghost mode
 
@@ -56,13 +64,13 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | sendUploadProgress (typing) | on | LOG ONLY | |
 | sendOfflinePacketAfterOnline | off | LOG ONLY | Log shows an offline status sent every 5 s while enabled |
 | ghostModeActive (master switch) | off | TESTED | Flips the five switches both ways |
-| markReadAfterAction | on | LOG ONLY | Reacting sends one read receipt (log `read forced`, `read push SENT`) |
+| markReadAfterAction | on | LOG ONLY | "Read on Interact": reacting sends one read receipt (log `read forced`, `read push SENT`). From the build after commit b0751176 also sending a message (not forwards), a poll vote, a peer sent to a bot, Send Now on a scheduled message and a quick reply, as on desktop (untested) |
 | useScheduledMessages | off | TESTED | "Schedule Messages". From commit d713406a only while Ghost Mode is on, as on desktop, and media waits 12 + max(6, 0.7 s per MB) + 1 s (desktop's formula); earlier builds checked the online switch and always used 12 s. Desktop's x1.2 behind a proxy is not ported |
 | sendWithoutSound | Never | TESTED | "Send without Sound": Never / When using Ghost Mode / Always, follows the ghost profile. Checked on the receiving account: a message sent with Always arrives marked silent (TESTING row 146). While silent is the default, the send menu offers "Send With Sound" instead of "Send Without Sound", as on desktop (next build, untested) |
 | suggestGhostModeBeforeViewingStory | on | UNTESTED | Prompt when opening someone's stories from the chat list (run 43349311751). Ghost Mode stays on afterwards; desktop turns it off again when the story closes. Stories opened from a profile or a chat avatar are not covered |
 | Per-setting "locked" flags (5) | off | TESTED | Long-press an option under Ghost Mode (desktop: SHIFT-click). A locked option ignores taps and keeps its value when Ghost Mode is switched; the last unlocked option cannot be locked (TESTING row 149) |
 | useGlobalGhostMode (per-account ghost) | on | TESTED | "Profile" row on the AyuGram page: Global Settings or this account (desktop lists every account). Off: ghost settings, locks, Send without Sound and the story alert are stored per account and follow the account in front |
-| "Read message" context action | - | TESTED | "Read Message" after Select in the message menu, only on incoming messages that are not deleted and not in Saved Messages (from commit d713406a). Sends the chat's read state; desktop reads up to the chosen message |
+| "Read message" context action | - | TESTED | "Read Message" after Select in the message menu, only on incoming messages that are not deleted and not in Saved Messages. From the build after commit b0751176 it reads up to the chosen message only, as on desktop (untested; earlier builds sent the whole chat's read state). Desktop also marks that message's media, mentions and reactions read |
 
 ## Message history
 
@@ -79,6 +87,9 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history: TESTED in a private chat cleared for both by the other side; every message is kept, including the newest, which the server edits into an invisible "history cleared" service message (TESTING row 144). Deleted chats: TESTED; when the other side deletes a private chat for both, the chat stays in the list with every message kept and marked deleted (TESTING row 145) |
 | Proper database instead of a plist file | - | N/A | NOT PORTED, FOR THE USER TO CONFIRM: internal storage only, nothing to see in the app. Kept deletions and edit history live in a plist store that has worked through every test; desktop's separate database is not needed for any ported feature |
 | Edit history viewer | - | TESTED | "History" in the message menu opens a sheet with each earlier version, its time and a copy button. Desktop opens a chat-like page |
+| Reply to a kept deleted message | - | UNTESTED | Sent as a quote block (author in bold with a link, then up to 100 characters of the replied text) above the new text, without a reply link, as on desktop (from the build after commit b0751176) |
+| Forward a kept deleted message | - | UNTESTED | Sent as a copy (text, entities, photo or file), as on desktop (from the build after commit b0751176). Desktop re-uploads the media; the port reuses the file while its server reference is valid |
+| Time on service messages | - | UNTESTED | The time (with seconds when Show Message Seconds is on) after the text of service messages such as "nash joined the group", as on desktop (from the build after commit b0751176). Desktop draws it in a small rounded badge; the port as dimmed text |
 
 ## Filters
 
@@ -99,7 +110,7 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | localPremium | off | TESTED | Client side: premium flag for the logged-in accounts (star, premium-only rows). Server-enforced features stay locked. Restart to apply |
 | premiumStickersAsCopy | on | TESTED | Not in AyuGram Desktop; added at the user's request. Re-uploads a premium sticker and sends the copy. Animated stickers tested; user confirmed it shows as a sticker on another device; video stickers not checked. From run 43330220187 the copy send closes the panel, clears the reply bar and keeps the reply like a normal send (confirmed by the user) |
 | Filtered/hidden messages in chat list preview | - | TESTED | Shows "Filtered message" |
-| disableStories | off | UNTESTED | Switch on; no stories were available to compare (tried again on November 16: none in nash's chat list with the switch off either) |
+| disableStories | off | UNTESTED | Hides the story strip in the chat list (no stories were available to compare on November 16). From the build after commit b0751176 also the story rings on chat list avatars and the profile photo, as on desktop (untested) |
 | disableCustomBackgrounds | off | UNTESTED | Ignores a photo wallpaper set for one chat, as on desktop; chat themes are left alone (seen November 16: a chat theme stayed with the switch on, which matches desktop). NEEDS THE USER: setting a photo wallpaper needs Photos access |
 | disableOpenLinkWarning | off | TESTED | Hidden links in chats and in profiles open without "Open link?"; links with a login part and proxy links still ask (TESTING row 133) |
 | disableNotificationsDelay | off | N/A | Desktop delays its own notifications while another device is online; iOS notifications come from Apple's push service and have no such delay to remove |
@@ -188,6 +199,9 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | Feature | iOS status | Notes |
 |---|---|---|
 | AyuGram settings screen | TESTED | Ghost, history, filters and other sections; Add Filter prompt works |
+| Search by ID | UNTESTED | In the chat list search, as on desktop: a number of 5 or more digits finds that user, "-100<id>" that channel or supergroup, "id:<id>" any of them; listed first among the chats. Only chats the app already knows (desktop's server lookup is switched off in its code too). Desktop's separate "Found by ID" heading and "ID: n" under results are not ported (from the build after commit b0751176) |
+| Session details: Official app | UNTESTED | "Official app" Yes / No row in a session's details, as on desktop (from the build after commit b0751176) |
+| Sticker pack menu: Pack Owner, Copy ID | UNTESTED | In the pack's more menu, as on desktop: Pack Owner opens the owner's profile when the app knows the user, otherwise copies the owner's ID; Copy ID (when Show Peer ID is not Hide) copies the set ID; both show "ID copied to clipboard." (from the build after commit b0751176). Pack Owner in message Details not ported |
 | Streamer mode | TESTED | DIFFERENT FROM DESKTOP: desktop's streamer mode hides the app's windows from screen capture; the iOS switch hides the own phone number in Settings (run 43084196247) |
 | Message shot (messages as image) | TESTED | "Message Shot" in the message menu renders the message (or the selected messages on screen) into one image and opens the share sheet. Desktop's theme and layout options are not ported. Run 43814121847; the image itself was not opened, only its size in the log |
 | Forward without author / from restricted chats / repeat message | TESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages). With "Allow Copy and Save in Restricted Chats" on, Copy and Forward show in chats with protected content and the message goes out as a copy; a text message from a restricted group arrived with no "Forwarded from" header (TESTING row 129). The switch also lifts the screen-capture protection of such chats (row 130). Photos and files are sent by reference, no re-upload, and albums are not kept together; neither was tried |

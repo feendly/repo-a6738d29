@@ -48,6 +48,49 @@ private func isIncludedCommunityContainer(_ peer: EnginePeer?, filter: ChatListN
     }
 }
 
+// AyuGram: desktop's search by ID. Matches go first among the local results.
+private func ayuPeersById(context: AccountContext, query: String) -> Signal<[EngineRenderedPeer], NoError> {
+    var text = query.trimmingCharacters(in: .whitespaces)
+    var anyKind = false
+    let lowered = text.lowercased()
+    if lowered.hasPrefix("id:") || lowered.hasPrefix("id ") {
+        text = String(text.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+        anyKind = true
+    }
+    let isNumber: (String) -> Bool = { value in
+        return !value.isEmpty && value.allSatisfy { $0.isASCII && $0.isNumber }
+    }
+    let idOf: (PeerId.Namespace, Int64) -> EnginePeer.Id = { namespace, value in
+        return EnginePeer.Id(namespace: namespace, id: EnginePeer.Id.Id._internalFromInt64Value(value))
+    }
+    var ids: [EnginePeer.Id] = []
+    if text.hasPrefix("-100") {
+        let rest = String(text.dropFirst(4))
+        if isNumber(rest), let value = Int64(rest) {
+            ids = [idOf(Namespaces.Peer.CloudChannel, value), idOf(Namespaces.Peer.CloudGroup, value)]
+        }
+    } else if text.count >= 5, isNumber(text), let value = Int64(text) {
+        ids = [idOf(Namespaces.Peer.CloudUser, value)]
+        if anyKind {
+            ids.append(idOf(Namespaces.Peer.CloudChannel, value))
+            ids.append(idOf(Namespaces.Peer.CloudGroup, value))
+        }
+    }
+    if ids.isEmpty {
+        return .single([])
+    }
+    return context.engine.data.get(EngineDataMap(ids.map { TelegramEngine.EngineData.Item.Peer.Peer(id: $0) }))
+    |> map { peers -> [EngineRenderedPeer] in
+        var result: [EngineRenderedPeer] = []
+        for id in ids {
+            if let maybePeer = peers[id], let peer = maybePeer {
+                result.append(EngineRenderedPeer(peer: peer))
+            }
+        }
+        return result
+    }
+}
+
 private enum ChatListRecentEntryStableId: Hashable {
     case topPeers
     case peerId(EnginePeer.Id, ChatListRecentEntry.Section)
@@ -2412,9 +2455,10 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
 
                     foundLocalPeers = combineLatest(
                         updatedLocalPeers,
-                        fixedOrRemovedRecentlySearchedPeers
+                        fixedOrRemovedRecentlySearchedPeers,
+                        ayuPeersById(context: context, query: query)
                     )
-                    |> mapToSignal { local, allRecentlySearched -> Signal<([EnginePeer.Id: Optional<EnginePeer.NotificationSettings>], [EnginePeer.Id: TelegramEngine.EngineData.Item.Messages.PeerUnreadState.Result], [EngineRenderedPeer], Set<EnginePeer.Id>, EngineGlobalNotificationSettings), NoError> in
+                    |> mapToSignal { local, allRecentlySearched, ayuIdPeers -> Signal<([EnginePeer.Id: Optional<EnginePeer.NotificationSettings>], [EnginePeer.Id: TelegramEngine.EngineData.Item.Messages.PeerUnreadState.Result], [EngineRenderedPeer], Set<EnginePeer.Id>, EngineGlobalNotificationSettings), NoError> in
                         let recentlySearched = allRecentlySearched.filter { peer in
                             guard let peer = peer.peer.peer else {
                                 return false
@@ -2425,6 +2469,13 @@ final class ChatListSearchListPaneNode: ASDisplayNode, ChatListSearchPaneNode {
                         var peerIds = Set<EnginePeer.Id>()
 
                         var peers: [EngineRenderedPeer] = []
+                        // AyuGram: chats found by ID first, as desktop lists them above the rest
+                        for peer in ayuIdPeers {
+                            if !peerIds.contains(peer.peerId) {
+                                peerIds.insert(peer.peerId)
+                                peers.append(peer)
+                            }
+                        }
                         for peer in recentlySearched {
                             if !peerIds.contains(peer.peer.peerId) {
                                 peerIds.insert(peer.peer.peerId)

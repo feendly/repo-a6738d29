@@ -1425,7 +1425,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                 for (ayuIndex, ayuEdit) in ayuEdits.enumerated() {
                     let ayuDate = ayuEdit.timestamp == 0 ? "" : ayuDateFormatter.string(from: Date(timeIntervalSince1970: Double(ayuEdit.timestamp)))
                     let ayuVersionText = ayuEdit.text
-                    ayuItems.append(ActionSheetTextItem(title: ayuDate.isEmpty ? ayuVersionText : "\(ayuDate)\n\(ayuVersionText)"))
+                    ayuItems.append(ActionSheetTextItem(title: ayuDate.isEmpty ? ayuVersionText : "\(ayuDate)\n\(ayuVersionText)", parseMarkdown: false))
                     ayuItems.append(ActionSheetButtonItem(title: "Copy Version \(ayuIndex + 1)", color: .accent, action: { [weak ayuSheet] in
                         UIPasteboard.general.string = ayuVersionText
                         ayuSheet?.dismissAnimated()
@@ -1647,12 +1647,13 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         // AyuGram: explicit read receipt while read receipts are suppressed; added after Select, as on desktop
         var ayuReadMessageItem: ContextMenuItem?
         if !AyuGramSettings.sendReadMessages && message.id.namespace == Namespaces.Message.Cloud && message.flags.contains(.Incoming) && !AyuMessagesStore.shared.isDeleted(message.id) && message.id.peerId != context.account.peerId {
-            let ayuReadPeerId = message.id.peerId
+            let ayuReadMessageId = message.id
             ayuReadMessageItem = .action(ContextMenuActionItem(text: "Read Message", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuShowInChat"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.default)
-                let _ = ayuSendReadReceiptNow(account: context.account, peerId: ayuReadPeerId).startStandalone()
+                // Up to this message only, as on desktop
+                let _ = ayuReadUpToMessage(account: context.account, messageId: ayuReadMessageId).startStandalone()
             }))
         }
 

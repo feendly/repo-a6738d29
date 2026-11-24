@@ -180,6 +180,8 @@ public extension TelegramEngine {
         }
 
         public func sendScheduledMessageNowInteractively(messageId: MessageId) -> Signal<Never, NoError> {
+            // AyuGram: Read on Interact, Send Now reads the chat
+            ayuReadAfterAction(account: self.account, peerId: messageId.peerId)
             return _internal_sendScheduledMessageNowInteractively(postbox: self.account.postbox, messageId: messageId)
         }
 

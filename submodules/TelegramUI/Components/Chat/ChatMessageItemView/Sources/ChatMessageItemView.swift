@@ -904,6 +904,11 @@ open class ChatMessageItemView: ListViewItemNode, ChatMessageItemNodeProtocol {
             switch button.action {
                 case let .url(url):
                     item.controllerInteraction.longTap(.url(url), ChatControllerInteraction.LongTapParams(message: item.message))
+                case .callback:
+                    // AyuGram: Copy Callback Data, as on desktop
+                    if let text = AyuGramSettings.callbackDataText(button.action), !text.isEmpty {
+                        item.controllerInteraction.copyText(text)
+                    }
                 default:
                     break
             }

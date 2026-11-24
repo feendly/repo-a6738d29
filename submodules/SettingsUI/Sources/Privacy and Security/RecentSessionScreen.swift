@@ -563,6 +563,10 @@ private final class RecentSessionSheetContent: CombinedComponent {
             contentHeight += description.size.height
             contentHeight += 22.0
             
+            var ayuOfficialApp: String?
+            if case let .session(session) = component.subject {
+                ayuOfficialApp = session.flags.contains(.isOfficial) ? strings.Common_Yes : strings.Common_No
+            }
             var clientSectionItems: [AnyComponentWithIdentity<Empty>] = []
             clientSectionItems.append(
                 AnyComponentWithIdentity(id: "application", component: AnyComponent(
@@ -598,6 +602,43 @@ private final class RecentSessionSheetContent: CombinedComponent {
                     )
                 ))
             )
+            
+            // AyuGram: whether the session runs an official Telegram app, as on desktop
+            if let ayuOfficialApp {
+                clientSectionItems.append(
+                    AnyComponentWithIdentity(id: "ayuOfficialApp", component: AnyComponent(
+                        ListActionItemComponent(
+                            theme: theme,
+                            style: .glass,
+                            title: AnyComponent(MultilineTextComponent(
+                                text: .plain(NSAttributedString(
+                                    string: "Official app",
+                                    font: Font.regular(17.0),
+                                    textColor: theme.list.itemPrimaryTextColor
+                                )),
+                                maximumNumberOfLines: 1
+                            )),
+                            accessory: .custom(ListActionItemComponent.CustomAccessory(
+                                component: AnyComponentWithIdentity(
+                                    id: "info",
+                                    component: AnyComponent(MultilineTextComponent(
+                                        text: .plain(NSAttributedString(
+                                            string: ayuOfficialApp,
+                                            font: Font.regular(presentationData.listsFontSize.itemListBaseFontSize),
+                                            textColor: theme.list.itemSecondaryTextColor
+                                        )),
+                                        maximumNumberOfLines: 1
+                                    ))
+                                ),
+                                insets: UIEdgeInsets(top: 0.0, left: 8.0, bottom: 0.0, right: 14.0),
+                                isInteractive: true
+                            )),
+                            action: nil,
+                            accessibility: ComponentAccessibility(label: "Official app", value: ayuOfficialApp)
+                        )
+                    ))
+                )
+            }
             
             if let ipString {
                 clientSectionItems.append(

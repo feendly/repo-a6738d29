@@ -6294,7 +6294,26 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                                         self?.push(ayuGramFiltersController(context: context))
                                     })))
                                 }
+                                // AyuGram: Show Filtered / Hide Filtered, when the chat has filtered messages, as on desktop
+                                let ayuChatKey = ayuClearPeerId.toInt64()
+                                let ayuShowingFiltered = AyuFilters.isShowingFiltered(peerId: ayuChatKey)
+                                if ayuShowingFiltered || AyuFilters.hasFilteredMessages(peerId: ayuChatKey) {
+                                    ayuSubItems.append(.action(ContextMenuActionItem(text: ayuShowingFiltered ? "Hide Filtered" : "Show Filtered", icon: { theme in
+                                        return generateTintedImage(image: UIImage(bundleImageName: ayuShowingFiltered ? "Ayu/MenuCaptionHide" : "Ayu/MenuCaptionShow"), color: theme.actionSheet.primaryTextColor)
+                                    }, action: { _, f in
+                                        f(.dismissWithoutContent)
+                                        for ayuId in AyuFilters.toggleShowingFiltered(peerId: ayuChatKey) {
+                                            let _ = ayuRefreshMessage(account: context.account, id: ayuId).startStandalone()
+                                        }
+                                    })))
+                                }
                                 if AyuGramSettings.bool(.saveDeletedMessages) {
+                                ayuSubItems.append(.action(ContextMenuActionItem(text: "View Deleted", icon: { theme in
+                                    return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuArchive"), color: theme.actionSheet.primaryTextColor)
+                                }, action: { _, f in
+                                    f(.dismissWithoutContent)
+                                    self?.ayuPresentDeletedMessages(peerId: ayuClearPeerId)
+                                })))
                                 if ayuShowFilters {
                                     ayuSubItems.append(.separator)
                                 }
@@ -6319,6 +6338,64 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                             f(.dismissWithoutContent)
                             self?.scrollToStartOfHistory()
                         })))
+
+                        // AyuGram: Open Channel from a supergroup with a linked channel, as on desktop
+                        if let ayuChannel = peer as? TelegramChannel, case .group = ayuChannel.info, case let .known(ayuLinkedPeerIdValue)? = (strongSelf.contentData?.state.peerView?.cachedData as? CachedChannelData)?.linkedDiscussionPeerId, let ayuLinkedPeerId = ayuLinkedPeerIdValue {
+                            items.append(.action(ContextMenuActionItem(text: strongSelf.presentationData.strings.Conversation_ContextMenuOpenChannel, icon: { theme in
+                                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuChannel"), color: theme.actionSheet.primaryTextColor)
+                            }, action: { _, f in
+                                f(.dismissWithoutContent)
+                                let _ = (context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: ayuLinkedPeerId))
+                                |> deliverOnMainQueue).startStandalone(next: { linkedPeer in
+                                    guard let strongSelf = self, let linkedPeer, let navigationController = strongSelf.effectiveNavigationController else {
+                                        return
+                                    }
+                                    context.sharedContext.navigateToChatController(NavigateToChatControllerParams(navigationController: navigationController, context: context, chatLocation: .peer(linkedPeer)))
+                                })
+                            })))
+                        }
+
+                        // AyuGram: Shadow Ban / Unshadow Ban for a user, under Enable Filters, as on desktop
+                        if AyuGramSettings.bool(.filtersEnabled), let ayuUser = peer as? TelegramUser, ayuUser.id != context.account.peerId {
+                            let ayuBanEntry = AyuFilters.userPrefix + String(ayuUser.id.id._internalGetInt64Value())
+                            let ayuIsBanned = AyuFilters.patterns.contains(ayuBanEntry)
+                            items.append(.action(ContextMenuActionItem(text: ayuIsBanned ? "Unshadow Ban" : "Shadow Ban", icon: { theme in
+                                return generateTintedImage(image: UIImage(bundleImageName: ayuIsBanned ? "Ayu/MenuShowInChat" : "Ayu/MenuStealth"), color: theme.actionSheet.primaryTextColor)
+                            }, action: { _, f in
+                                f(.dismissWithoutContent)
+                                var patterns = AyuFilters.patterns
+                                if ayuIsBanned {
+                                    patterns.removeAll(where: { $0 == ayuBanEntry })
+                                } else if !patterns.contains(ayuBanEntry) {
+                                    patterns.append(ayuBanEntry)
+                                }
+                                AyuFilters.setPatterns(patterns)
+                            })))
+                        }
+
+                        // AyuGram: Delete own messages in a group you are in, as on desktop
+                        var ayuCanDeleteOwn = false
+                        if let ayuGroup = peer as? TelegramGroup, case .Member = ayuGroup.membership {
+                            ayuCanDeleteOwn = true
+                        } else if let ayuChannel = peer as? TelegramChannel, case .group = ayuChannel.info, case .member = ayuChannel.participationStatus {
+                            ayuCanDeleteOwn = true
+                        }
+                        if ayuCanDeleteOwn && strongSelf.chatLocation.threadId == nil {
+                            let ayuDeletePeerId = peer.id
+                            let ayuCancelText = strongSelf.presentationData.strings.Common_Cancel
+                            let ayuDeleteText = strongSelf.presentationData.strings.Common_Delete
+                            items.append(.action(ContextMenuActionItem(text: "Delete own messages", icon: { theme in
+                                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuTTL"), color: theme.actionSheet.primaryTextColor)
+                            }, action: { _, f in
+                                f(.dismissWithoutContent)
+                                guard let strongSelf = self else {
+                                    return
+                                }
+                                strongSelf.present(textAlertController(context: context, updatedPresentationData: strongSelf.updatedPresentationData, title: nil, text: "Are you sure you want to delete all your messages from this group?", actions: [TextAlertAction(type: .genericAction, title: ayuCancelText, action: {}), TextAlertAction(type: .destructiveAction, title: ayuDeleteText, action: {
+                                    AyuOwnMessagesDeleter(context: context, peerId: ayuDeletePeerId).start()
+                                })]), in: .window(.root))
+                            })))
+                        }
 
                         // AyuGram: quick admin shortcuts
                         if AyuGramSettings.bool(.quickAdminShortcuts), let channel = peer as? TelegramChannel {
@@ -11881,6 +11958,93 @@ extension ChatControllerImpl {
                     return current
                 })
             }
+        })
+    }
+}
+
+/// AyuGram: Delete own messages, as on desktop: collects this account's messages in the group a page at a
+/// time, then deletes them for everyone in batches of 100.
+private final class AyuOwnMessagesDeleter {
+    private let context: AccountContext
+    private let peerId: EnginePeer.Id
+    private var collected: [EngineMessage.Id] = []
+
+    init(context: AccountContext, peerId: EnginePeer.Id) {
+        self.context = context
+        self.peerId = peerId
+    }
+
+    func start() {
+        self.nextPage(nil)
+    }
+
+    private func nextPage(_ state: SearchMessagesState?) {
+        let location: SearchMessagesLocation = .peer(peerId: self.peerId, fromId: self.context.account.peerId, tags: nil, reactions: nil, threadId: nil, minDate: nil, maxDate: nil)
+        let _ = (self.context.engine.messages.searchMessages(location: location, query: "", state: state, limit: 100)
+        |> take(1)
+        |> deliverOnMainQueue).startStandalone(next: { result, updatedState in
+            let ids = result.messages.map { $0.id }.filter { $0.peerId == self.peerId && $0.namespace == Namespaces.Message.Cloud && !self.collected.contains($0) }
+            self.collected.append(contentsOf: ids)
+            if !result.completed && !ids.isEmpty {
+                self.nextPage(updatedState)
+            } else {
+                self.deleteCollected()
+            }
+        })
+    }
+
+    private func deleteCollected() {
+        AyuGramSettings.debugLog("delete own messages peer=\(self.peerId.toInt64()) count=\(self.collected.count)")
+        var index = 0
+        while index < self.collected.count {
+            let batch = Array(self.collected[index ..< min(index + 100, self.collected.count)])
+            let _ = self.context.engine.messages.deleteMessagesInteractively(messageIds: batch, type: .forEveryone).startStandalone()
+            index += 100
+        }
+    }
+}
+
+extension ChatControllerImpl {
+    /// AyuGram: View Deleted. The chat's kept deleted messages, newest first (the latest 50); each can be shown
+    /// in the chat.
+    func ayuPresentDeletedMessages(peerId: EnginePeer.Id) {
+        let ids = AyuMessagesStore.shared.deletedIds(peerId: peerId)
+        let context = self.context
+        let _ = (context.account.postbox.transaction { transaction -> [Message] in
+            return ids.compactMap { transaction.getMessage($0) }
+        }
+        |> deliverOnMainQueue).startStandalone(next: { [weak self] messages in
+            guard let self else {
+                return
+            }
+            let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+            let sheet = ActionSheetController(presentationData: presentationData)
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .medium
+            let sorted = messages.sorted(by: { $0.index > $1.index })
+            var items: [ActionSheetItem] = []
+            items.append(ActionSheetTextItem(title: sorted.isEmpty ? "No deleted messages in this chat" : "Deleted Messages (\(sorted.count))"))
+            for message in sorted.prefix(50) {
+                let date = formatter.string(from: Date(timeIntervalSince1970: Double(message.timestamp)))
+                let author = message.author.flatMap { EnginePeer($0).compactDisplayTitle } ?? ""
+                var text = message.text.isEmpty ? "Media" : message.text
+                if text.count > 200 {
+                    text = String(text.prefix(199)) + "\u{2026}"
+                }
+                let messageId = message.id
+                items.append(ActionSheetTextItem(title: author.isEmpty ? "\(date)\n\(text)" : "\(date), \(author)\n\(text)", parseMarkdown: false))
+                items.append(ActionSheetButtonItem(title: "Show in Chat", color: .accent, action: { [weak sheet, weak self] in
+                    sheet?.dismissAnimated()
+                    self?.navigateToMessage(messageLocation: .id(messageId, NavigateToMessageParams()), animated: true, forceInCurrentChat: true)
+                }))
+            }
+            sheet.setItemGroups([ActionSheetItemGroup(items: items), ActionSheetItemGroup(items: [
+                ActionSheetButtonItem(title: presentationData.strings.Common_Cancel, color: .accent, font: .bold, action: { [weak sheet] in
+                    sheet?.dismissAnimated()
+                })
+            ])])
+            self.present(sheet, in: .window(.root))
         })
     }
 }

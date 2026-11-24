@@ -729,12 +729,113 @@ private func ayuIsForwardRestricted(transaction: Transaction, message: Message) 
     return false
 }
 
+/// AyuGram: what desktop puts in the quote when the replied message has no text.
+private func ayuReplyMediaDescription(_ message: Message) -> String {
+    for media in message.media {
+        if media is TelegramMediaImage {
+            return "Photo"
+        }
+        if let file = media as? TelegramMediaFile {
+            if file.isSticker || file.isAnimatedSticker {
+                return "Sticker"
+            }
+            if file.isInstantVideo {
+                return "Video message"
+            }
+            if file.isVoice {
+                return "Voice message"
+            }
+            if file.isVideo {
+                return file.isAnimated ? "GIF" : "Video"
+            }
+            if file.isMusic {
+                return "Audio"
+            }
+            return "File"
+        }
+        if media is TelegramMediaPoll {
+            return "Poll"
+        }
+        if media is TelegramMediaMap {
+            return "Location"
+        }
+        if media is TelegramMediaContact {
+            return "Contact"
+        }
+    }
+    return "Message"
+}
+
+/// AyuGram: a reply to a kept deleted message becomes a quote block above the text: the author in bold
+/// with a link (not in a private chat with that author), then up to 100 characters of the replied text.
+private func ayuPseudoReply(_ message: EnqueueMessage, replyMessage: Message, quote: String?, chatPeerId: PeerId) -> EnqueueMessage {
+    guard case let .message(text, attributes, inlineStickers, mediaReference, threadId, _, replyToStoryId, localGroupingKey, correlationId, bubbleUpEmojiOrStickersets) = message else {
+        return message
+    }
+    var name = ""
+    var mentionPeerId: PeerId?
+    if chatPeerId.namespace != Namespaces.Peer.CloudUser || replyMessage.id.peerId != chatPeerId {
+        if let user = replyMessage.author as? TelegramUser {
+            name = [user.firstName, user.lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+            mentionPeerId = user.id
+        } else if let channel = replyMessage.author as? TelegramChannel {
+            name = channel.title
+        } else if let group = replyMessage.author as? TelegramGroup {
+            name = group.title
+        }
+    }
+    var quoted = quote ?? ""
+    if quoted.isEmpty {
+        quoted = replyMessage.text
+    }
+    if quoted.isEmpty {
+        quoted = ayuReplyMediaDescription(replyMessage)
+    }
+    let quotedString = quoted as NSString
+    if quotedString.length >= 100 {
+        var cut = 99
+        let lastCharacter = quotedString.rangeOfComposedCharacterSequence(at: cut - 1)
+        if lastCharacter.location + lastCharacter.length > cut {
+            cut = lastCharacter.location
+        }
+        quoted = quotedString.substring(to: cut) + "\u{2026}"
+    }
+    let prefix = name.isEmpty ? quoted : name + "\n" + quoted
+    let prefixLength = (prefix as NSString).length
+    let nameLength = (name as NSString).length
+    let updatedText = text.isEmpty ? prefix : prefix + "\n" + text
+    let shift = prefixLength + (text.isEmpty ? 0 : 1)
+
+    var entities: [MessageTextEntity] = [MessageTextEntity(range: 0 ..< prefixLength, type: .BlockQuote(isCollapsed: false))]
+    if nameLength > 0 {
+        entities.append(MessageTextEntity(range: 0 ..< nameLength, type: .Bold))
+        if let mentionPeerId {
+            entities.append(MessageTextEntity(range: 0 ..< nameLength, type: .TextMention(peerId: mentionPeerId)))
+        }
+    }
+    var updatedAttributes: [MessageAttribute] = []
+    for attribute in attributes {
+        if let entitiesAttribute = attribute as? TextEntitiesMessageAttribute {
+            for entity in entitiesAttribute.entities {
+                entities.append(MessageTextEntity(range: (entity.range.lowerBound + shift) ..< (entity.range.upperBound + shift), type: entity.type))
+            }
+        } else {
+            updatedAttributes.append(attribute)
+        }
+    }
+    updatedAttributes.append(TextEntitiesMessageAttribute(entities: entities))
+    return .message(text: updatedText, attributes: updatedAttributes, inlineStickers: inlineStickers, mediaReference: mediaReference, threadId: threadId, replyToMessageId: nil, replyToStoryId: replyToStoryId, localGroupingKey: localGroupingKey, correlationId: correlationId, bubbleUpEmojiOrStickersets: bubbleUpEmojiOrStickersets)
+}
+
 private func forwardedMessageToBeReuploaded(transaction: Transaction, id: MessageId) -> Message? {
     if let message = transaction.getMessage(id) {
         if message.id.namespace != Namespaces.Message.Cloud && !Namespaces.Message.allEphemeral.contains(message.id.namespace) {
             return message
         } else if ayuIsForwardRestricted(transaction: transaction, message: message) {
             // AyuGram: the server refuses to forward from chats with protected content; send a copy instead
+            return message
+        } else if message.id.namespace == Namespaces.Message.Cloud && AyuMessagesStore.shared.isDeleted(message.id) {
+            // AyuGram: a kept deleted message no longer exists on the server; send a copy, as on desktop
             return message
         } else {
             return nil
@@ -856,6 +957,15 @@ private func ayuTransformOutgoingMessages(peerId: PeerId, messages: [EnqueueMess
 
 public func enqueueMessages(account: Account, peerId: PeerId, messages: [EnqueueMessage]) -> Signal<[MessageId?], NoError> {
     let messages = ayuTransformOutgoingMessages(peerId: peerId, messages: messages)
+    // AyuGram: Read on Interact, sending a message reads the chat (forwards do not, as on desktop)
+    if messages.contains(where: { message in
+        if case .message = message {
+            return true
+        }
+        return false
+    }) {
+        ayuReadAfterAction(account: account, peerId: peerId)
+    }
     let signal: Signal<[(Bool, EnqueueMessage)], NoError>
     if let transformOutgoingMessageMedia = account.transformOutgoingMessageMedia {
         signal = opportunisticallyTransformOutgoingMedia(network: account.network, postbox: account.postbox, transformOutgoingMessageMedia: transformOutgoingMessageMedia, messages: messages, userInteractive: true)
@@ -1044,6 +1154,12 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
         
         switch message {
             case let .message(_, attributes, _, _, threadId, replyToMessageId, _, _, _, _):
+                // AyuGram: a reply to a kept deleted message is sent as a quote of it, as on desktop
+                if let replyToMessageId = replyToMessageId, peerId.namespace != Namespaces.Peer.SecretChat, replyToMessageId.messageId.namespace == Namespaces.Message.Cloud, AyuMessagesStore.shared.isDeleted(replyToMessageId.messageId), let replyMessage = transaction.getMessage(replyToMessageId.messageId) {
+                    AyuGramSettings.debugLog("reply to deleted message sent as a quote id=\(replyToMessageId.messageId.id)")
+                    updatedMessages.append((transformedMedia, ayuPseudoReply(updatedMessage, replyMessage: replyMessage, quote: replyToMessageId.quote?.text, chatPeerId: peerId)))
+                    continue outer
+                }
                 if let replyToMessageId = replyToMessageId, (replyToMessageId.messageId.peerId != peerId && peerId.namespace == Namespaces.Peer.SecretChat), let replyMessage = transaction.getMessage(replyToMessageId.messageId) {
                     var canBeForwarded = true
                     if replyMessage.id.namespace != Namespaces.Message.Cloud {
@@ -1067,11 +1183,11 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                             mediaReference = .standalone(media: media)
                         }
                     } else if sourceMessage.id.namespace == Namespaces.Message.Cloud {
-                        // AyuGram: copy of a message from a chat with protected content
+                        // AyuGram: copy of a message from a chat with protected content, or of a kept deleted message
                         if let media = sourceMessage.media.first(where: { $0 is TelegramMediaImage || $0 is TelegramMediaFile }) {
                             mediaReference = .message(message: MessageReference(sourceMessage), media: media)
                         }
-                        AyuGramSettings.debugLog("forward as copy from restricted chat peer=\(sourceMessage.id.peerId.toInt64()) media=\(mediaReference != nil)")
+                        AyuGramSettings.debugLog("forward as copy peer=\(sourceMessage.id.peerId.toInt64()) deleted=\(AyuMessagesStore.shared.isDeleted(sourceMessage.id)) media=\(mediaReference != nil)")
                     }
                     var text = sourceMessage.text
                     var hidesCaption = false

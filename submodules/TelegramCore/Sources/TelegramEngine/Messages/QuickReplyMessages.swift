@@ -383,6 +383,8 @@ func _internal_reorderMessageShortcuts(account: Account, ids: [Int32], localComp
 }
 
 func _internal_sendMessageShortcut(account: Account, peerId: PeerId, id: Int32) -> Signal<Never, NoError> {
+    // AyuGram: Read on Interact, a quick reply reads the chat
+    ayuReadAfterAction(account: account, peerId: peerId)
     return account.postbox.transaction { transaction -> Peer? in
         return transaction.getPeer(peerId)
     }

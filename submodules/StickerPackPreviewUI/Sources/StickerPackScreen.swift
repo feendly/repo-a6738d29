@@ -1145,6 +1145,54 @@ private final class StickerPackContainer: ASDisplayNode {
             }
         })))
         
+        // AyuGram: Pack Owner and Copy ID, as on desktop. The owner is encoded in the set ID.
+        if self.currentStickerPacks.count <= 1, let (info, _, _) = self.currentStickerPack {
+            let ayuSetId = info.id.id
+            var ayuOwnerId = ayuSetId >> 32
+            if (ayuSetId >> 16) & 0xff == 0x3f {
+                ayuOwnerId |= 0x80000000
+            }
+            if (ayuSetId >> 24) & 0xff != 0 {
+                ayuOwnerId += 0x100000000
+            }
+            let ayuShowIdCopiedToast: (ViewController?) -> Void = { controller in
+                let presentationData = self.context.sharedContext.currentPresentationData.with { $0 }
+                controller?.present(UndoOverlayController(presentationData: presentationData, content: .copy(text: "ID copied to clipboard."), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .window(.root))
+            }
+            items.append(.action(ContextMenuActionItem(text: "Pack Owner", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/User"), color: theme.contextMenu.primaryColor)
+            }, action: { [weak self] _, f in
+                f(.default)
+                guard let self else {
+                    return
+                }
+                let ownerPeerId = EnginePeer.Id(namespace: Namespaces.Peer.CloudUser, id: EnginePeer.Id.Id._internalFromInt64Value(ayuOwnerId))
+                let _ = (self.context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: ownerPeerId))
+                |> deliverOnMainQueue).startStandalone(next: { [weak self] peer in
+                    guard let self else {
+                        return
+                    }
+                    if let peer, let navigationController = self.controller?.parentNavigationController, let infoController = self.context.sharedContext.makePeerInfoController(context: self.context, updatedPresentationData: nil, peer: peer, mode: .generic, avatarInitiallyExpanded: false, fromChat: false, requestsContext: nil) {
+                        self.controller?.dismiss()
+                        navigationController.pushViewController(infoController)
+                    } else {
+                        // Desktop copies the owner's ID when it cannot open the profile
+                        UIPasteboard.general.string = "\(ayuOwnerId)"
+                        ayuShowIdCopiedToast(self.controller)
+                    }
+                })
+            })))
+            if AyuGramSettings.peerIdDisplay != .hidden {
+                items.append(.action(ContextMenuActionItem(text: "Copy ID", icon: { theme in
+                    return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Copy"), color: theme.contextMenu.primaryColor)
+                }, action: { [weak self] _, f in
+                    f(.default)
+                    UIPasteboard.general.string = "\(ayuSetId)"
+                    ayuShowIdCopiedToast(self?.controller)
+                })))
+            }
+        }
+
         if let (info, packItems, _) = self.currentStickerPack, info.flags.contains(.isCreator) && !info.flags.contains(.isEmoji) {
             items.append(.separator)
             if packItems.count > 0 {

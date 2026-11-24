@@ -187,6 +187,10 @@ final class PeerInfoAvatarTransformContainerNode: ASDisplayNode {
             isForum = true
         }
         
+        // AyuGram: Disable Stories also removes the story ring from the profile photo, as on desktop
+        if AyuGramSettings.bool(.disableStories) {
+            storyStats = nil
+        }
         self.avatarNode.setStoryStats(storyStats: storyStats, presentationParams: AvatarNode.StoryPresentationParams(
             colors: colors,
             lineWidth: 3.0,

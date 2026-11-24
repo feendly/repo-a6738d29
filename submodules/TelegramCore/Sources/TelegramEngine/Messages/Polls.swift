@@ -38,6 +38,8 @@ public enum RequestMessageSelectPollOptionError {
 }
 
 func _internal_requestMessageSelectPollOption(account: Account, messageId: MessageId, opaqueIdentifiers: [Data]) -> Signal<TelegramMediaPoll?, RequestMessageSelectPollOptionError> {
+    // AyuGram: Read on Interact, voting reads the chat
+    ayuReadAfterAction(account: account, peerId: messageId.peerId)
     return account.postbox.loadedPeerWithId(messageId.peerId)
     |> take(1)
     |> castError(RequestMessageSelectPollOptionError.self)

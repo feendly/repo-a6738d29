@@ -351,6 +351,8 @@ public enum SendBotRequestedPeerError {
 }
 
 func _internal_sendBotRequestedPeer(account: Account, peerId: PeerId, messageId: MessageId?, requestId: String?, buttonId: Int32, requestedPeerIds: [PeerId]) -> Signal<Void, SendBotRequestedPeerError> {
+    // AyuGram: Read on Interact, answering a bot's peer request reads the chat
+    ayuReadAfterAction(account: account, peerId: peerId)
     return account.postbox.transaction { transaction -> Signal<Void, SendBotRequestedPeerError> in
         if let peer = transaction.getPeer(peerId) {
             var inputRequestedPeers: [Api.InputPeer] = []

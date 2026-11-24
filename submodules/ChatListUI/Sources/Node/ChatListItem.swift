@@ -1978,6 +1978,10 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
         } else if case let .groupReference(groupReference) = item.content {
             storyState = groupReference.storyState
         }
+        // AyuGram: Disable Stories also removes the story rings from avatars, as on desktop
+        if AyuGramSettings.bool(.disableStories) {
+            storyState = nil
+        }
         
         var peer: EnginePeer?
         var displayAsMessage = false

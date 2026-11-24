@@ -471,6 +471,51 @@ func synchronizePeerReadState(network: Network, postbox: Postbox, stateManager: 
     }
 }
 
+/// AyuGram: Read Message, as on desktop: a read receipt up to this message only, not the rest of the
+/// chat, sent even while read receipts are off.
+public func ayuReadUpToMessage(account: Account, messageId: MessageId) -> Signal<Never, NoError> {
+    let network = account.network
+    let stateManager: AccountStateManager = account.stateManager
+    AyuGramSettings.debugLog("read up to message peer=\(messageId.peerId.toInt64()) id=\(messageId.id)")
+    return account.postbox.transaction { transaction -> Api.InputPeer? in
+        return transaction.getPeer(messageId.peerId).flatMap(apiInputPeer)
+    }
+    |> mapToSignal { inputPeer -> Signal<Never, NoError> in
+        guard let inputPeer = inputPeer else {
+            return .complete()
+        }
+        if case let .inputPeerChannel(channelData) = inputPeer {
+            return network.request(Api.functions.channels.readHistory(channel: Api.InputChannel.inputChannel(.init(channelId: channelData.channelId, accessHash: channelData.accessHash)), maxId: messageId.id))
+            |> `catch` { _ -> Signal<Api.Bool, NoError> in
+                return .complete()
+            }
+            |> ignoreValues
+        }
+        return network.request(Api.functions.messages.readHistory(peer: inputPeer, maxId: messageId.id))
+        |> map(Optional.init)
+        |> `catch` { _ -> Signal<Api.messages.AffectedMessages?, NoError> in
+            return .single(nil)
+        }
+        |> mapToSignal { result -> Signal<Never, NoError> in
+            if let result = result {
+                switch result {
+                case let .affectedMessages(affectedMessagesData):
+                    stateManager.addUpdateGroups([.updatePts(pts: affectedMessagesData.pts, ptsCount: affectedMessagesData.ptsCount)])
+                }
+            }
+            return .complete()
+        }
+    }
+}
+
+/// AyuGram: Read on Interact. An action in a chat reads it while read receipts are off, as on desktop.
+func ayuReadAfterAction(account: Account, peerId: PeerId) {
+    if AyuGramSettings.sendReadMessages || !AyuGramSettings.bool(.markReadAfterAction) || peerId.namespace == Namespaces.Peer.SecretChat {
+        return
+    }
+    let _ = ayuSendReadReceiptNow(account: account, peerId: peerId).start()
+}
+
 /// AyuGram: sends one read receipt for this chat even while read receipts are suppressed.
 public func ayuSendReadReceiptNow(account: Account, peerId: PeerId) -> Signal<Never, NoError> {
     AyuGramSettings.forceReadOnce(peerId: peerId.toInt64())

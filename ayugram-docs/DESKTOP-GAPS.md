@@ -16,7 +16,15 @@ shadow bans and blocked users under Enable Filters and covering forwards, Disabl
 the promoted chat, seconds in last-seen times, messages removed by auto-delete kept (commits d713406a to 94f4587a);
 seconds in read, edited and sent times in the message menu, Send With Sound, tg://chat?id=, tg://ayusettings?s=,
 "User not found.", the unread-reaction button and badge where reactions are hidden, the datacenter as the ID row
-label, the "ID copied" toast, topic IDs (the commit after 94f4587a). STATUS.md rows were rewritten to match.
+label, the "ID copied" toast, topic IDs (commit b0751176); Read on Interact after sending, poll votes, bot peer
+requests, Send Now and quick replies, Read Message up to the chosen message, the "Official app" session row, Pack
+Owner and Copy ID in the sticker pack menu, replies to kept deleted messages as quotes, forwards of them as copies,
+the time on service messages, Show/Hide Filtered, Open Channel, Shadow Ban and Delete own messages in the chat menu,
+search by ID, View Deleted, Copy Callback Data, story rings removed with Disable Stories (the commit after
+b0751176). STATUS.md rows were rewritten to match.
+
+Left in section 1 on purpose: desktop still marks mentions and reactions read in ghost mode; the port does not send
+them, which is stricter (for the user to confirm).
 
 ## 1. Ghost mode leaks (activity still sent while it should not be)
 
