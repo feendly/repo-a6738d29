@@ -200,21 +200,16 @@ func chatHistoryEntriesForView(
                 message = message.withUpdatedAttributes(message.attributes.filter { !($0 is ReactionsMessageAttribute) && !($0 is PendingReactionsMessageAttribute) })
             }
         }
-        // AyuGram: messages hidden on this device
-        if AyuMessagesStore.shared.isHidden(message.id) {
+        // AyuGram: hidden messages, filters, shadow bans and blocked users (desktop's rules)
+        if AyuFilters.shouldHideMessage(message) {
             continue
         }
-        // AyuGram: message filters
-        if AyuFilters.shouldHide(text: message.text, isIncoming: message.flags.contains(.Incoming), isPrivateChat: message.id.peerId.namespace == Namespaces.Peer.CloudUser, peerId: message.id.peerId.toInt64()) {
-            continue
-        }
-        // AyuGram: shadow-banned users are hidden in groups and channels
-        if message.id.peerId.namespace != Namespaces.Peer.CloudUser, message.flags.contains(.Incoming), let ayuAuthorId = message.author?.id, AyuFilters.isShadowBanned(ayuAuthorId.id._internalGetInt64Value()) {
-            continue
-        }
-        // AyuGram: messages from blocked users are hidden in groups
-        if AyuGramSettings.bool(.hideFromBlocked), message.id.peerId.namespace != Namespaces.Peer.CloudUser, message.flags.contains(.Incoming), let ayuBlockedAuthorId = message.author?.id, AyuFilters.isBlocked(ayuBlockedAuthorId.toInt64()) {
-            continue
+        // AyuGram: Filter Zalgo strips the stacked marks instead of hiding the message, as on desktop
+        if AyuGramSettings.bool(.filterZalgo) {
+            let ayuStripped = AyuFilters.stripZalgo(message.text)
+            if ayuStripped != message.text {
+                message = message.withUpdatedText(ayuStripped)
+            }
         }
         
         if case let .replyThread(replyThreadMessage) = location, replyThreadMessage.isForumPost {

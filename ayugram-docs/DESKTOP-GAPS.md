@@ -7,6 +7,12 @@ such as Peek Online, read and typing exclusions, Save Last Seen Date, database e
 
 Order of work: ghost-mode leaks first, then tracker corrections, then missing features by size.
 
+Fixed since the audit (not yet tested on the iPad): channel views, thread reads and pinned-story views in ghost
+mode, scheduled sending rules (commit d713406a); filter scope for groups, shadow bans and blocked users under Enable
+Filters and covering forwards, Filter Zalgo stripping instead of hiding, Disable Ads for sponsored search results and
+the promoted chat, folder tab counters, the reaction picker where reactions are hidden, seconds in last-seen times
+(the commit after d713406a). STATUS.md rows were rewritten to match.
+
 ## 1. Ghost mode leaks (activity still sent while it should not be)
 
 | Gap | Desktop | iOS |

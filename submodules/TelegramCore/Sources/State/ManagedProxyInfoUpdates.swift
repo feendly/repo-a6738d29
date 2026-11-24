@@ -223,7 +223,8 @@ func _internal_fetchPromoInfo(accountPeerId: EnginePeer.Id, postbox: Postbox, ne
                 }
                 
                 var additionalChatListItems: [AdditionalChatListItem] = []
-                if let kind, let peer, let parsedPeer = transaction.getPeer(peer.peerId) {
+                // AyuGram: Disable Ads also drops the promoted chat at the top of the list
+                if let kind, let peer, let parsedPeer = transaction.getPeer(peer.peerId), !AyuGramSettings.bool(.disableAds) {
                     additionalChatListItems.append(PromoChatListItem(peerId: parsedPeer.id, kind: kind))
                 }
                 transaction.replaceAdditionalChatListItems(additionalChatListItems)

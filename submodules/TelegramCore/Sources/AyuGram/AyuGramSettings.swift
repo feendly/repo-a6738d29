@@ -4,6 +4,7 @@
 // Backed by UserDefaults so it can be read synchronously from any queue.
 
 import Foundation
+import Postbox
 
 public final class AyuGramSettings {
     public enum BoolKey: String, CaseIterable {
@@ -792,9 +793,62 @@ public final class AyuFilters {
         if isPrivateChat && !AyuGramSettings.bool(.filtersEnabledInChats) {
             return false
         }
-        if AyuGramSettings.bool(.filterZalgo) && isZalgo(text) {
+        return matches(text, peerId: peerId)
+    }
+
+    // Desktop's pattern (ayu/utils/telegram_helpers.cpp kZalgoPattern): three or more combining marks in a row,
+    // and the bidirectional control characters.
+    private static let zalgoRegex = try? NSRegularExpression(pattern: "\\p{Mn}{3,}|[\\u202A-\\u202E\\u2066-\\u2069\\u200E\\u200F\\u061C]", options: [])
+
+    /// "Filter Zalgo": replaces each matched character with an invisible word joiner, as desktop does. The text keeps
+    /// its UTF-16 length, so formatting offsets stay valid.
+    public static func stripZalgo(_ text: String) -> String {
+        guard let regex = zalgoRegex else {
+            return text
+        }
+        let source = text as NSString
+        let found = regex.matches(in: text, options: [], range: NSRange(location: 0, length: source.length))
+        if found.isEmpty {
+            return text
+        }
+        let result = NSMutableString(string: text)
+        for match in found.reversed() {
+            result.replaceCharacters(in: match.range, with: String(repeating: "\u{2060}", count: match.range.length))
+        }
+        return result as String
+    }
+
+    /// Whether a message is hidden on this device, by the rules desktop uses: hidden from the message menu; matched by
+    /// a filter (channels always, private chats and groups with "Enable Shared Filters in Chats"); or sent, or
+    /// forwarded from, a shadow-banned user or (with "Hide from Blocked Users") a blocked one. A chat with that user
+    /// itself is left alone. Everything but the menu's Hide needs "Enable Filters".
+    public static func shouldHideMessage(_ message: Message) -> Bool {
+        if AyuMessagesStore.shared.isHidden(message.id) {
             return true
         }
-        return matches(text, peerId: peerId)
+        if !AyuGramSettings.bool(.filtersEnabled) || !message.flags.contains(.Incoming) {
+            return false
+        }
+        var isBroadcast = false
+        if let channel = message.peers[message.id.peerId] as? TelegramChannel, case .broadcast = channel.info {
+            isBroadcast = true
+        }
+        if shouldHide(text: message.text, isIncoming: true, isPrivateChat: !isBroadcast, peerId: message.id.peerId.toInt64()) {
+            return true
+        }
+        var senders: [PeerId] = []
+        if let authorId = message.author?.id, authorId != message.id.peerId {
+            senders.append(authorId)
+        }
+        if let forwardAuthorId = message.forwardInfo?.author?.id, forwardAuthorId != message.id.peerId {
+            senders.append(forwardAuthorId)
+        }
+        if senders.contains(where: { isShadowBanned($0.id._internalGetInt64Value()) }) {
+            return true
+        }
+        if AyuGramSettings.bool(.hideFromBlocked) && senders.contains(where: { isBlocked($0.toInt64()) }) {
+            return true
+        }
+        return false
     }
 }

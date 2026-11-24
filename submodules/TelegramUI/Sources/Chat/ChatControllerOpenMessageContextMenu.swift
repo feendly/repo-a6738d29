@@ -146,8 +146,23 @@ extension ChatControllerImpl {
                         actions.alwaysAllowPremiumReactions = true
                     }
                     
-                    // AyuGram: no reactions bar above the message menu
-                    if !AyuGramSettings.bool(.showReactionsPanelInContextMenu) {
+                    // AyuGram: no reactions bar above the message menu, also where reactions are hidden for that
+                    // kind of chat (as on desktop)
+                    var ayuHideReactionBar = !AyuGramSettings.bool(.showReactionsPanelInContextMenu)
+                    if let ayuChatPeer = self.presentationInterfaceState.renderedPeer?.peer {
+                        if let ayuChannel = ayuChatPeer as? TelegramChannel {
+                            if case .broadcast = ayuChannel.info {
+                                ayuHideReactionBar = ayuHideReactionBar || !AyuGramSettings.bool(.showChannelReactions)
+                            } else {
+                                ayuHideReactionBar = ayuHideReactionBar || !AyuGramSettings.bool(.showGroupReactions)
+                            }
+                        } else if ayuChatPeer is TelegramGroup {
+                            ayuHideReactionBar = ayuHideReactionBar || !AyuGramSettings.bool(.showGroupReactions)
+                        } else if ayuChatPeer is TelegramUser {
+                            ayuHideReactionBar = ayuHideReactionBar || !AyuGramSettings.bool(.showPrivateChatReactions)
+                        }
+                    }
+                    if ayuHideReactionBar {
                         actions.reactionItems = []
                     }
 

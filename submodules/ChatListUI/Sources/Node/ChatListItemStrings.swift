@@ -88,16 +88,8 @@ public func chatListItemStrings(strings: PresentationStrings, nameDisplayOrder: 
     if let restrictionReason = chatPeer.chatMainPeer?.restrictionText(platform: "ios", contentSettings: contentSettings) {
         return (nil, false, restrictionReason, [], nil, nil, nil)
     }
-    // AyuGram: filtered or locally hidden messages do not show in the chat list preview
-    if let ayuMessage = message, AyuMessagesStore.shared.isHidden(ayuMessage.id) || AyuFilters.shouldHide(text: ayuMessage.text, isIncoming: ayuMessage.flags.contains(.Incoming), isPrivateChat: ayuMessage.id.peerId.namespace == Namespaces.Peer.CloudUser, peerId: ayuMessage.id.peerId.toInt64()) {
-        return (nil, false, "Filtered message", [], nil, nil, nil)
-    }
-    // AyuGram: shadow-banned users do not show in the chat list preview either
-    if let ayuMessage = message, ayuMessage.id.peerId.namespace != Namespaces.Peer.CloudUser, ayuMessage.flags.contains(.Incoming), let ayuAuthorId = ayuMessage.author?.id, AyuFilters.isShadowBanned(ayuAuthorId.id._internalGetInt64Value()) {
-        return (nil, false, "Filtered message", [], nil, nil, nil)
-    }
-    // AyuGram: blocked users do not show in the chat list preview of groups either
-    if AyuGramSettings.bool(.hideFromBlocked), let ayuMessage = message, ayuMessage.id.peerId.namespace != Namespaces.Peer.CloudUser, ayuMessage.flags.contains(.Incoming), let ayuBlockedAuthorId = ayuMessage.author?.id, AyuFilters.isBlocked(ayuBlockedAuthorId.toInt64()) {
+    // AyuGram: hidden or filtered messages do not show in the chat list preview (same rules as the chat)
+    if let ayuMessage = message, AyuFilters.shouldHideMessage(ayuMessage._asMessage()) {
         return (nil, false, "Filtered message", [], nil, nil, nil)
     }
     
@@ -126,7 +118,8 @@ public func chatListItemStrings(strings: PresentationStrings, nameDisplayOrder: 
                 }
             }
             if !message.text.isEmpty {
-                messageText = message.text
+                // AyuGram: Filter Zalgo
+                messageText = AyuGramSettings.bool(.filterZalgo) ? AyuFilters.stripZalgo(message.text) : message.text
                 richTextPreview = nil
                 messageEntities = message._asMessage().textEntitiesAttribute?.entities ?? []
                 for entity in messageEntities {

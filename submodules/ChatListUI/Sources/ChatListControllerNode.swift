@@ -1616,7 +1616,8 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
                         case let .filter(idValue, text, unread):
                             id = AnyHashable(idValue)
                             title = HorizontalTabsComponent.Tab.Title(text: text.text, entities: text.entities, enableAnimations: text.enableAnimations)
-                            if unread.value != 0 {
+                            // AyuGram: Hide Notification Counters hides the folder tab counters, as on desktop
+                            if unread.value != 0 && !AyuGramSettings.bool(.hideNotificationCounters) {
                                 badge = HorizontalTabsComponent.Tab.Badge(
                                     title: "\(unread.value)",
                                     isAccent: unread.hasUnmuted

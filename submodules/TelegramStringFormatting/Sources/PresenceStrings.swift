@@ -230,13 +230,13 @@ public enum RelativeTimestampFormatDay {
     case tomorrow
 }
 
-public func stringForUserPresence(strings: PresentationStrings, day: RelativeTimestampFormatDay, dateTimeFormat: PresentationDateTimeFormat, hours: Int32, minutes: Int32) -> String {
+public func stringForUserPresence(strings: PresentationStrings, day: RelativeTimestampFormatDay, dateTimeFormat: PresentationDateTimeFormat, hours: Int32, minutes: Int32, seconds: Int32? = nil) -> String {
     let dayString: String
     switch day {
     case .today, .tomorrow:
-        dayString = strings.LastSeen_TodayAt(stringForShortTimestamp(hours: hours, minutes: minutes, dateTimeFormat: dateTimeFormat)).string
+        dayString = strings.LastSeen_TodayAt(stringForShortTimestamp(hours: hours, minutes: minutes, seconds: seconds, dateTimeFormat: dateTimeFormat)).string
     case .yesterday:
-        dayString = strings.LastSeen_YesterdayAt(stringForShortTimestamp(hours: hours, minutes: minutes, dateTimeFormat: dateTimeFormat)).string
+        dayString = strings.LastSeen_YesterdayAt(stringForShortTimestamp(hours: hours, minutes: minutes, seconds: seconds, dateTimeFormat: dateTimeFormat)).string
     }
     return dayString
 }
@@ -609,7 +609,8 @@ public func stringAndActivityForUserPresence(strings: PresentationStrings, dateT
                     } else {
                         day = .yesterday
                     }
-                    return (stringForUserPresence(strings: strings, day: day, dateTimeFormat: dateTimeFormat, hours: timeinfo.tm_hour, minutes: timeinfo.tm_min), false)
+                    // AyuGram: Show Message Seconds also covers last seen, as on desktop
+                    return (stringForUserPresence(strings: strings, day: day, dateTimeFormat: dateTimeFormat, hours: timeinfo.tm_hour, minutes: timeinfo.tm_min, seconds: AyuGramSettings.bool(.showMessageSeconds) ? timeinfo.tm_sec : nil), false)
                 } else {
                     return (strings.LastSeen_AtDate(stringForTimestamp(day: timeinfo.tm_mday, month: timeinfo.tm_mon + 1, year: timeinfo.tm_year, dateTimeFormat: dateTimeFormat)).string, false)
                 }
