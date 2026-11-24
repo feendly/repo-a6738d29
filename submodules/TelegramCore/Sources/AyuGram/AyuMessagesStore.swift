@@ -70,6 +70,32 @@ public final class AyuMessagesStore {
         self.scheduleWrite()
     }
 
+    /// Ids of the kept deleted messages of one chat.
+    public func deletedIds(peerId: PeerId) -> [MessageId] {
+        let prefix = "\(peerId.toInt64()):"
+        self.lock.lock()
+        let keys = self.deletedByKey.keys.filter { $0.hasPrefix(prefix) }
+        self.lock.unlock()
+        var result: [MessageId] = []
+        for key in keys {
+            let parts = key.dropFirst(prefix.count).split(separator: ":")
+            if parts.count == 2, let namespace = Int32(parts[0]), let id = Int32(parts[1]) {
+                result.append(MessageId(peerId: peerId, namespace: namespace, id: id))
+            }
+        }
+        return result
+    }
+
+    /// Drops the deleted marks of messages that were removed from this device.
+    public func forgetDeleted(_ ids: [MessageId]) {
+        self.lock.lock()
+        for id in ids {
+            self.deletedByKey.removeValue(forKey: AyuMessagesStore.key(id))
+        }
+        self.lock.unlock()
+        self.scheduleWrite()
+    }
+
     public func isHidden(_ id: MessageId) -> Bool {
         let key = AyuMessagesStore.key(id)
         self.lock.lock()
@@ -152,6 +178,21 @@ private func ayuTouchMessage(transaction: Transaction, id: MessageId) {
 public func ayuRefreshMessage(account: Account, id: MessageId) -> Signal<Never, NoError> {
     return account.postbox.transaction { transaction -> Void in
         ayuTouchMessage(transaction: transaction, id: id)
+    }
+    |> ignoreValues
+}
+
+/// "Clear Deleted": removes the kept deleted messages of one chat from this device for good.
+public func ayuClearDeletedMessages(account: Account, peerId: PeerId) -> Signal<Never, NoError> {
+    let ids = AyuMessagesStore.shared.deletedIds(peerId: peerId)
+    if ids.isEmpty {
+        return .complete()
+    }
+    AyuGramSettings.debugLog("clear deleted peer=\(peerId.toInt64()) count=\(ids.count)")
+    return account.postbox.transaction { transaction -> Void in
+        // Forgotten first, so the removal is not logged as a kept message going missing.
+        AyuMessagesStore.shared.forgetDeleted(ids)
+        _internal_deleteMessages(transaction: transaction, mediaBox: account.postbox.mediaBox, ids: ids)
     }
     |> ignoreValues
 }

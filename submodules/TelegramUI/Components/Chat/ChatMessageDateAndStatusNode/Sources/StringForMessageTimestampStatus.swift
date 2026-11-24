@@ -255,7 +255,12 @@ public func stringForMessageTimestampStatus(
         
     } else {
         if let authorTitle = authorTitle, !authorTitle.isEmpty {
-            dateText = "\(authorTitle), \(dateText)"
+            // AyuGram: on edited messages, mark where the edited mark goes (between author and time, as on desktop)
+            if message.attributes.contains(where: { ($0 as? EditedMessageAttribute)?.isHidden == false }) {
+                dateText = "\(authorTitle), \(AyuGramSettings.authorTimeMarker)\(dateText)"
+            } else {
+                dateText = "\(authorTitle), \(dateText)"
+            }
         }
     }
     

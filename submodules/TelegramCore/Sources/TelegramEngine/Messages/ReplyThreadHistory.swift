@@ -388,6 +388,12 @@ private class ReplyThreadHistoryContextImpl {
                 }
             }
 
+            // AyuGram: ghost mode. The thread is read on this device only.
+            if !AyuGramSettings.sendReadMessages {
+                AyuGramSettings.debugLog("thread read SKIPPED peer=\(peerId.toInt64()) thread=\(threadId)")
+                return
+            }
+
             if let subPeerId {
                 let signal = strongSelf.account.network.request(Api.functions.messages.readSavedHistory(parentPeer: inputPeer, peer: subPeerId, maxId: messageIndex.id.id))
                 |> `catch` { _ -> Signal<Api.Bool, NoError> in

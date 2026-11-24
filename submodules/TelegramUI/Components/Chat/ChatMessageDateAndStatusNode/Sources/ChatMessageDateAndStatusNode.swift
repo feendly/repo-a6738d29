@@ -645,7 +645,22 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
                     // AyuGram: custom edited mark; it follows the deleted mark, as on desktop
                     let ayuEditedMark = AyuGramSettings.editedMark ?? arguments.presentationData.strings.Conversation_MessageEditedLabel
                     let ayuDeletedPrefix = "\(AyuGramSettings.deletedMark) "
-                    if updatedDateText.hasPrefix(ayuDeletedPrefix) {
+                    let ayuDateNSString = updatedDateText as NSString
+                    let ayuAuthorRange = ayuDateNSString.range(of: AyuGramSettings.authorTimeMarker, options: .literal)
+                    if ayuAuthorRange.location != NSNotFound {
+                        // "[deleted ]Author, |time": desktop writes "Author, edited time", or "Author <pencil> time" with icons
+                        var ayuHead = ayuDateNSString.substring(to: ayuAuthorRange.location)
+                        let ayuTail = ayuDateNSString.substring(from: ayuAuthorRange.location + ayuAuthorRange.length)
+                        if AyuGramSettings.bool(.replaceBottomInfoWithIcons) {
+                            if ayuHead.hasSuffix(", ") {
+                                ayuHead = String(ayuHead.dropLast(2)) + " "
+                            }
+                            if (ayuHead as NSString).hasPrefix(ayuDeletedPrefix) {
+                                ayuHead = AyuGramSettings.deletedMark + String(ayuHead.dropFirst(ayuDeletedPrefix.count))
+                            }
+                        }
+                        updatedDateText = "\(ayuHead)\(ayuEditedMark) \(ayuTail)"
+                    } else if updatedDateText.hasPrefix(ayuDeletedPrefix) {
                         let ayuRest = String(updatedDateText.dropFirst(ayuDeletedPrefix.count))
                         if AyuGramSettings.bool(.replaceBottomInfoWithIcons) {
                             updatedDateText = "\(AyuGramSettings.deletedMark)\(ayuEditedMark) \(ayuRest)"
@@ -657,6 +672,7 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
                     }
                 }
             }
+            updatedDateText = updatedDateText.replacingOccurrences(of: AyuGramSettings.authorTimeMarker, with: "", options: .literal, range: nil)
             if let impressionCount = arguments.impressionCount {
                 updatedDateText = compactNumericCountString(impressionCount, decimalSeparator: arguments.presentationData.dateTimeFormat.decimalSeparator) + " " + updatedDateText
             }
@@ -671,7 +687,8 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
                     (AyuGramSettings.editedIconMarker, "Ayu/EditedMark")
                 ]
                 for (ayuMarker, ayuImageName) in ayuMarks {
-                    let ayuRange = ayuDateText.range(of: ayuMarker)
+                    // Literal: U+2001 is canonically equal to U+2003, so a plain search would mix the two marks up.
+                    let ayuRange = ayuDateText.range(of: ayuMarker, options: .literal)
                     if ayuRange.location != NSNotFound, let ayuImage = AyuDateMarkImages.image(named: ayuImageName, fontSize: dateFont.pointSize) {
                         dateAttributedString.addAttribute(.attachment, value: ayuImage, range: ayuRange)
                     }

@@ -263,7 +263,18 @@ private let ayuContextMenuRows: [(key: AyuGramSettings.BoolKey, title: String, i
 ]
 
 private func ayuSharedFilters() -> [String] {
-    return AyuFilters.patterns.filter { !$0.hasPrefix(AyuFilters.userPrefix) && !$0.hasPrefix(AyuFilters.chatPrefix) }
+    return AyuFilters.patterns.filter { entry in
+        let pattern = ayuFilterPattern(entry)
+        return !pattern.hasPrefix(AyuFilters.userPrefix) && !pattern.hasPrefix(AyuFilters.chatPrefix)
+    }
+}
+
+/// A stored filter entry without its "disabled" marker.
+private func ayuFilterPattern(_ entry: String) -> String {
+    if entry.hasPrefix(AyuFilters.disabledPrefix) {
+        return String(entry.dropFirst(AyuFilters.disabledPrefix.count))
+    }
+    return entry
 }
 
 private func ayuShadowBans() -> [String] {
@@ -272,13 +283,6 @@ private func ayuShadowBans() -> [String] {
 
 private func ayuChatFilters() -> [String] {
     return AyuFilters.patterns.filter { $0.hasPrefix(AyuFilters.chatPrefix) }
-}
-
-private func ayuCountLabel(_ count: Int) -> String {
-    if count == 0 {
-        return ""
-    }
-    return count == 1 ? "1 filter" : "\(count) filters"
 }
 
 // MARK: Entries
@@ -319,11 +323,13 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
             ghostSubItems.append(AyuSubItem(id: option.key.rawValue, title: locked ? "\(option.title) \u{1F512}" : option.title, selected: option.inverted ? !stored : stored))
         }
         b.add("ghostMode", .expandable(title: "Ghost Mode", value: AyuGramSettings.isGhostModeActive, expanded: state.expanded.contains("ghostMode"), subItems: ghostSubItems, lockable: true))
-        b.footer("Long-press any option to prevent it from changing when toggling Ghost Mode.")
-
-        b.nextSection()
         b.add("markRead", .toggle(title: "Read on Interact", value: AyuGramSettings.bool(.markReadAfterAction), icon: nil))
-        b.footer("Automatically marks a message as read when you send a new one or tap a reaction.")
+        let readOnInteractText = "Automatically marks a message as read when you send a new one or tap a reaction."
+        if state.expanded.contains("ghostMode") {
+            b.footer("Long-press any option to prevent it from changing when toggling Ghost Mode.\n\n\(readOnInteractText)")
+        } else {
+            b.footer(readOnInteractText)
+        }
 
         b.nextSection()
         b.add("scheduled", .toggle(title: "Schedule Messages", value: AyuGramSettings.bool(.useScheduledMessages), icon: nil))
@@ -356,8 +362,8 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
         b.toggle(.hideFromBlocked, "Hide from Blocked Users")
 
         b.nextSection()
-        b.value("page:filterList", "Shared Filters", ayuCountLabel(ayuSharedFilters().count))
-        b.value("page:shadowBanList", "Shadow Ban", ayuShadowBans().isEmpty ? "" : "\(ayuShadowBans().count)")
+        b.value("page:filterList", "Shared Filters", "")
+        b.value("page:shadowBanList", "Shadow Ban", "")
 
         let chatFilters = ayuChatFilters()
         if !chatFilters.isEmpty {
@@ -384,10 +390,9 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
             b.footer("No filters here yet.")
         } else {
             b.header("FILTERS")
-            for pattern in filters.prefix(200) {
-                b.value("f:\(pattern)", pattern, "", arrow: false)
+            for entry in filters.prefix(200) {
+                b.value("f:\(entry)", ayuFilterPattern(entry), entry.hasPrefix(AyuFilters.disabledPrefix) ? "Disabled" : "", arrow: false)
             }
-            b.footer("Incoming messages matching an expression (case insensitive) are hidden. Tap a filter to edit or delete it.")
         }
 
     case .shadowBanList:
@@ -396,12 +401,11 @@ private func ayuSettingsEntries(page: AyuPage, state: AyuScreenState, appIcons: 
         if bans.isEmpty {
             b.add("shadowBanEmpty", .footer("No filters here yet."))
         } else {
-            b.add("header-bans", .header("USERS"))
+            b.add("header-bans", .header("FILTERS"))
             for entry in bans.prefix(200) {
                 b.value("u:\(entry)", String(entry.dropFirst(AyuFilters.userPrefix.count)), "", arrow: false)
             }
         }
-        b.footer("Messages from shadow banned users are hidden in groups on this device. Add users with Shadow Ban in the message menu of a group; tap one here to remove it.")
 
     case .general:
         b.header("TRANSLATE MESSAGES")
@@ -550,6 +554,11 @@ public func ayuGramSettingsController(context: AccountContext) -> ViewController
     return ayuGramSettingsPageController(context: context, page: .main)
 }
 
+/// The shared filters list, opened from the chat menu ("View Filters").
+public func ayuGramFiltersController(context: AccountContext) -> ViewController {
+    return ayuGramSettingsPageController(context: context, page: .filterList)
+}
+
 private func ayuGramSettingsPageController(context: AccountContext, page: AyuPage) -> ViewController {
     AyuGramSettings.debugLog("ui ayuGramSettingsController created page=\(page.title.isEmpty ? "main" : page.title)")
     let version = Atomic<Int>(value: 0)
@@ -619,7 +628,7 @@ private func ayuGramSettingsPageController(context: AccountContext, page: AyuPag
     }
 
     let editFilter: (String?) -> Void = { existing in
-        let controller = promptController(context: context, text: existing == nil ? "Add Filter" : "Edit Filter", subtitle: "Regular expression. Matching incoming messages are hidden.", value: existing, placeholder: "Expression", apply: { value in
+        let controller = promptController(context: context, text: existing == nil ? "Add Filter" : "Edit Filter", subtitle: "Regular expression. Matching incoming messages are hidden.", value: existing.map { ayuFilterPattern($0) }, placeholder: "Expression", apply: { value in
             guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else {
                 return
             }
@@ -629,7 +638,7 @@ private func ayuGramSettingsPageController(context: AccountContext, page: AyuPag
             }
             var patterns = AyuFilters.patterns
             if let existing = existing, let index = patterns.firstIndex(of: existing) {
-                patterns[index] = value
+                patterns[index] = existing.hasPrefix(AyuFilters.disabledPrefix) ? AyuFilters.disabledPrefix + value : value
             } else if !patterns.contains(value) {
                 patterns.append(value)
             }
@@ -704,13 +713,21 @@ private func ayuGramSettingsPageController(context: AccountContext, page: AyuPag
             return
         }
         if id.hasPrefix("f:") {
-            let pattern = String(id.dropFirst(2))
-            presentActions(pattern, [
-                ("Edit Filter", false, {
-                    editFilter(pattern)
+            let entry = String(id.dropFirst(2))
+            let isDisabled = entry.hasPrefix(AyuFilters.disabledPrefix)
+            presentActions(ayuFilterPattern(entry), [
+                ("Edit", false, {
+                    editFilter(entry)
+                }),
+                (isDisabled ? "Enable" : "Disable", false, {
+                    var patterns = AyuFilters.patterns
+                    if let index = patterns.firstIndex(of: entry) {
+                        patterns[index] = isDisabled ? ayuFilterPattern(entry) : AyuFilters.disabledPrefix + entry
+                        AyuFilters.setPatterns(patterns)
+                    }
                 }),
                 ("Delete", true, {
-                    removeFilterEntry(pattern)
+                    removeFilterEntry(entry)
                 })
             ])
             return
@@ -718,7 +735,7 @@ private func ayuGramSettingsPageController(context: AccountContext, page: AyuPag
         if id.hasPrefix("u:") {
             let entry = String(id.dropFirst(2))
             presentActions("User \(entry.dropFirst(AyuFilters.userPrefix.count))", [
-                ("Unshadow Ban", true, {
+                ("Delete", true, {
                     removeFilterEntry(entry)
                 })
             ])
@@ -819,8 +836,10 @@ private func ayuGramSettingsPageController(context: AccountContext, page: AyuPag
             ])
         case "reset":
             presentActions("Are you sure you want to reset all AyuGram preferences to their defaults?", [
-                ("Reset Settings", true, {
+                ("Yes", true, {
                     AyuGramSettings.resetAll()
+                    AyuFilters.setPatterns(AyuFilters.patterns.filter { !$0.hasPrefix(AyuFilters.userPrefix) })
+                    presentAlert("Done")
                 })
             ])
         default:
@@ -835,8 +854,8 @@ private func ayuGramSettingsPageController(context: AccountContext, page: AyuPag
         bump()
     }, toggleSubItem: { id, subId in
         if id == "ghostMode" {
-            if let key = AyuGramSettings.BoolKey(rawValue: subId) {
-                AyuGramSettings.setBool(key, !AyuGramSettings.bool(key))
+            if let option = ayuGhostOptions.first(where: { $0.key.rawValue == subId }), !AyuGramSettings.bool(option.lock) {
+                AyuGramSettings.setBool(option.key, !AyuGramSettings.bool(option.key))
             }
         } else if subId.count > 2, let key = AyuGramSettings.BoolKey(rawValue: String(subId.dropFirst(2))) {
             AyuGramSettings.setBool(key, !AyuGramSettings.bool(key))
@@ -846,7 +865,11 @@ private func ayuGramSettingsPageController(context: AccountContext, page: AyuPag
         guard id == "ghostMode", let option = ayuGhostOptions.first(where: { $0.key.rawValue == subId }) else {
             return
         }
-        AyuGramSettings.setBool(option.lock, !AyuGramSettings.bool(option.lock))
+        let isLocked = AyuGramSettings.bool(option.lock)
+        if !isLocked && ayuGhostOptions.filter({ !AyuGramSettings.bool($0.lock) }).count <= 1 {
+            return
+        }
+        AyuGramSettings.setBool(option.lock, !isLocked)
         bump()
     }, selectAppIcon: { icon in
         currentAppIcon.set(icon.name)

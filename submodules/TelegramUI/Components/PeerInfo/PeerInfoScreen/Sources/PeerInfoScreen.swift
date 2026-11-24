@@ -7383,26 +7383,6 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
         let strings = self.presentationData.strings
         
         var items: [ContextMenuItem] = []
-        // AyuGram: quick ghost mode toggle
-        let ayuGhostActive = AyuGramSettings.isGhostModeActive
-        if AyuGramSettings.bool(.showGhostToggleInDrawer) {
-            items.append(.action(ContextMenuActionItem(text: ayuGhostActive ? "Disable Ghost Mode" : "Enable Ghost Mode", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/Ghost"), color: theme.contextMenu.primaryColor)
-            }, action: { _, f in
-                AyuGramSettings.setGhostModeActive(!ayuGhostActive)
-                f(.default)
-            })))
-        }
-        // AyuGram: quick streamer mode toggle
-        if AyuGramSettings.bool(.showStreamerToggleInDrawer) {
-            let ayuStreamerActive = AyuGramSettings.bool(.streamerMode)
-            items.append(.action(ContextMenuActionItem(text: ayuStreamerActive ? "Disable Streamer Mode" : "Enable Streamer Mode", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/Streamer"), color: theme.contextMenu.primaryColor)
-            }, action: { _, f in
-                AyuGramSettings.setBool(.streamerMode, !ayuStreamerActive)
-                f(.default)
-            })))
-        }
         // AyuGram: mark every chat as read on this device only, without read receipts
         if AyuGramSettings.bool(.showLReadToggleInDrawer) {
             let ayuContext = self.context
@@ -7427,6 +7407,26 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
                     AyuGramSettings.overrideSendReadMessages(true, seconds: 120.0)
                     let _ = ayuContext.engine.messages.markAllChatsAsReadInteractively(items: [(groupId: .root, filterPredicate: nil), (groupId: .archive, filterPredicate: nil)]).startStandalone()
                 })]), on: .root)
+            })))
+        }
+        // AyuGram: quick ghost mode toggle
+        let ayuGhostActive = AyuGramSettings.isGhostModeActive
+        if AyuGramSettings.bool(.showGhostToggleInDrawer) {
+            items.append(.action(ContextMenuActionItem(text: ayuGhostActive ? "Disable Ghost Mode" : "Enable Ghost Mode", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/Ghost"), color: theme.contextMenu.primaryColor)
+            }, action: { _, f in
+                AyuGramSettings.setGhostModeActive(!ayuGhostActive)
+                f(.default)
+            })))
+        }
+        // AyuGram: quick streamer mode toggle
+        if AyuGramSettings.bool(.showStreamerToggleInDrawer) {
+            let ayuStreamerActive = AyuGramSettings.bool(.streamerMode)
+            items.append(.action(ContextMenuActionItem(text: ayuStreamerActive ? "Disable Streamer Mode" : "Enable Streamer Mode", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/Streamer"), color: theme.contextMenu.primaryColor)
+            }, action: { _, f in
+                AyuGramSettings.setBool(.streamerMode, !ayuStreamerActive)
+                f(.default)
             })))
         }
         items.append(.action(ContextMenuActionItem(text: strings.Settings_AddAccount, icon: { theme in

@@ -178,6 +178,7 @@ public final class AyuGramSettings {
     private static let perAccountKeys: Set<BoolKey> = [
         .sendReadMessages, .sendReadStories, .sendOnlinePackets, .sendUploadProgress, .sendOfflinePacketAfterOnline,
         .markReadAfterAction, .useScheduledMessages,
+        .sendWithoutSoundAlways, .sendWithoutSoundInGhost, .suggestGhostModeBeforeViewingStory,
         .lockSendReadMessages, .lockSendReadStories, .lockSendOnlinePackets, .lockSendUploadProgress, .lockSendOfflinePacketAfterOnline
     ]
     private static let activeAccountLock = NSLock()
@@ -258,6 +259,8 @@ public final class AyuGramSettings {
     /// Both are em-wide spaces; the date node draws the icon over them, in the colour of the time.
     public static let deletedIconMarker = "\u{2003}"
     public static let editedIconMarker = "\u{2001}"
+    /// Invisible marker between an author signature and the time of an edited message: the edited mark goes there.
+    public static let authorTimeMarker = "\u{2060}"
 
     /// The custom deleted mark, whatever "Replace with Icons" says (shown in settings).
     public static var deletedMarkText: String {
@@ -606,6 +609,9 @@ public final class AyuFilters {
     /// Entries of the form "user:<id>" are shadow bans, not text patterns.
     public static let userPrefix = "user:"
 
+    /// Entries of the form "off:<entry>" are disabled: kept in the list, not applied (desktop's per-filter Disable).
+    public static let disabledPrefix = "off:"
+
     // Call with the lock held.
     private static func rebuildCacheIfNeeded() {
         if cachedPatterns != nil {
@@ -617,6 +623,9 @@ public final class AyuFilters {
         var userIds = Set<Int64>()
         var chatRegexes: [Int64: [NSRegularExpression]] = [:]
         for pattern in current {
+            if pattern.hasPrefix(disabledPrefix) {
+                continue
+            }
             if pattern.hasPrefix(userPrefix) {
                 if let id = Int64(pattern.dropFirst(userPrefix.count)) {
                     userIds.insert(id)

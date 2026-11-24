@@ -816,11 +816,29 @@ private func ayuTransformOutgoingMessages(peerId: PeerId, messages: [EnqueueMess
     let messages = ayuCleanOutgoingLinks(messages)
     let silent = AyuGramSettings.bool(.sendWithoutSoundAlways) || (AyuGramSettings.bool(.sendWithoutSoundInGhost) && AyuGramSettings.isGhostModeActive)
     let isCloudPeer = peerId.namespace == Namespaces.Peer.CloudUser || peerId.namespace == Namespaces.Peer.CloudGroup || peerId.namespace == Namespaces.Peer.CloudChannel
-    let scheduled = AyuGramSettings.bool(.useScheduledMessages) && !AyuGramSettings.sendOnlinePackets && isCloudPeer
+    let scheduled = AyuGramSettings.bool(.useScheduledMessages) && AyuGramSettings.isGhostModeActive && isCloudPeer
     if !silent && !scheduled {
         return messages
     }
-    let scheduleTime = Int32(Date().timeIntervalSince1970) + 12
+    // Desktop: 12 s for text; for media 12 + max(6, 0.7 s per MB) + 1 s, so the upload finishes first.
+    var mediaSize: Int64 = 0
+    var hasMedia = false
+    for message in messages {
+        if case let .message(_, _, _, mediaReference, _, _, _, _, _, _) = message, let media = mediaReference?.media {
+            hasMedia = true
+            if let file = media as? TelegramMediaFile {
+                mediaSize += file.size ?? 0
+            } else if let image = media as? TelegramMediaImage, let representation = largestImageRepresentation(image.representations) {
+                mediaSize += representation.resource.size ?? 0
+            }
+        }
+    }
+    var scheduleDelay: Int32 = 12
+    if hasMedia {
+        let megabytes = Double(mediaSize) / 1024.0 / 1024.0
+        scheduleDelay = 12 + Int32(max(6.0, ceil(megabytes * 0.7))) + 1
+    }
+    let scheduleTime = Int32(Date().timeIntervalSince1970) + scheduleDelay
     return messages.map { message -> EnqueueMessage in
         return message.withUpdatedAttributes { attributes in
             var attributes = attributes

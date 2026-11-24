@@ -6270,6 +6270,56 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                             self?.interfaceInteraction?.beginMessageSearch(.everything, "")
                         })))
                         
+                        // AyuGram: desktop's chat menu items
+                        let ayuClearPeerId = peer.id
+                        let ayuShowFilters = AyuGramSettings.bool(.filtersEnabled) && !((peer as? TelegramUser).map { $0.botInfo == nil } ?? false)
+                        if AyuGramSettings.bool(.saveDeletedMessages) || ayuShowFilters {
+                            let ayuBackTitle = strongSelf.presentationData.strings.Common_Back
+                            let ayuCancelTitle = strongSelf.presentationData.strings.Common_Cancel
+                            items.append(.action(ContextMenuActionItem(text: "AyuGram", icon: { theme in
+                                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuGroupReactions"), color: theme.actionSheet.primaryTextColor)
+                            }, action: { c, _ in
+                                var ayuSubItems: [ContextMenuItem] = []
+                                ayuSubItems.append(.action(ContextMenuActionItem(text: ayuBackTitle, textColor: .primary, icon: { theme in
+                                    return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Back"), color: theme.actionSheet.primaryTextColor)
+                                }, iconSource: nil, iconPosition: .left, action: { c, _ in
+                                    c?.popItems()
+                                })))
+                                ayuSubItems.append(.separator)
+                                if ayuShowFilters {
+                                    ayuSubItems.append(.action(ContextMenuActionItem(text: "View Filters", icon: { theme in
+                                        return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuAddToFolder"), color: theme.actionSheet.primaryTextColor)
+                                    }, action: { _, f in
+                                        f(.dismissWithoutContent)
+                                        self?.push(ayuGramFiltersController(context: context))
+                                    })))
+                                }
+                                if AyuGramSettings.bool(.saveDeletedMessages) {
+                                if ayuShowFilters {
+                                    ayuSubItems.append(.separator)
+                                }
+                                ayuSubItems.append(.action(ContextMenuActionItem(text: "Clear Deleted", textColor: .destructive, icon: { theme in
+                                    return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuClear"), color: theme.actionSheet.destructiveActionTextColor)
+                                }, action: { _, f in
+                                    f(.dismissWithoutContent)
+                                    guard let strongSelf = self else {
+                                        return
+                                    }
+                                    strongSelf.present(textAlertController(context: context, updatedPresentationData: strongSelf.updatedPresentationData, title: nil, text: "Are you sure you want to clear all deleted messages in this chat?", actions: [TextAlertAction(type: .genericAction, title: ayuCancelTitle, action: {}), TextAlertAction(type: .destructiveAction, title: "Clear", action: {
+                                        let _ = ayuClearDeletedMessages(account: context.account, peerId: ayuClearPeerId).startStandalone()
+                                    })]), in: .window(.root))
+                                })))
+                                }
+                                c?.pushItems(items: .single(ContextController.Items(content: .list(ayuSubItems))))
+                            })))
+                        }
+                        items.append(.action(ContextMenuActionItem(text: "To Beginning", icon: { theme in
+                            return generateTintedImage(image: UIImage(bundleImageName: "Ayu/ToBeginning"), color: theme.actionSheet.primaryTextColor)
+                        }, action: { _, f in
+                            f(.dismissWithoutContent)
+                            self?.scrollToStartOfHistory()
+                        })))
+
                         // AyuGram: quick admin shortcuts
                         if AyuGramSettings.bool(.quickAdminShortcuts), let channel = peer as? TelegramChannel {
                             let isAdmin = channel.flags.contains(.isCreator) || channel.adminRights != nil
@@ -6279,7 +6329,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                             }
                             if isAdmin {
                                 items.append(.action(ContextMenuActionItem(text: strongSelf.presentationData.strings.Group_Info_AdminLog, icon: { theme in
-                                    return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/List"), color: theme.actionSheet.primaryTextColor)
+                                    return generateTintedImage(image: UIImage(bundleImageName: "Ayu/TopBarRecentActions"), color: theme.actionSheet.primaryTextColor)
                                 }, action: { _, f in
                                     f(.dismissWithoutContent)
                                     guard let strongSelf = self else {
@@ -6291,7 +6341,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                             }
                             if isGroup || isAdmin {
                                 items.append(.action(ContextMenuActionItem(text: strongSelf.presentationData.strings.GroupInfo_Administrators, icon: { theme in
-                                    return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Promote"), color: theme.actionSheet.primaryTextColor)
+                                    return generateTintedImage(image: UIImage(bundleImageName: "Ayu/TopBarAdmins"), color: theme.actionSheet.primaryTextColor)
                                 }, action: { _, f in
                                     f(.dismissWithoutContent)
                                     guard let strongSelf = self else {

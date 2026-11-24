@@ -31,6 +31,7 @@ import Pasteboard
 import BrowserUI
 import ChatRichTextEditorComposer
 import SettingsUI
+import PromptUI
 import TextNodeWithEntities
 import ChatControllerInteraction
 import ChatMessageItemCommon
@@ -1360,6 +1361,52 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         // in settings are collected for the AyuGram submenu (desktop shows them while CTRL or SHIFT is held).
         var ayuExtendedActions: [ContextMenuItem] = []
 
+        let ayuMenuMessageId = message.id
+        // AyuGram: add a filter from the message text; desktop opens its filter editor prefilled with the text
+        let ayuFilterVisibility = AyuGramSettings.contextMenuVisibility(.showAddFilterInContextMenu)
+        if ayuFilterVisibility != .hidden && AyuGramSettings.bool(.filtersEnabled) && !message.text.isEmpty {
+            let ayuFilterText = message.text
+            let ayuFilterPeerId = message.id.peerId.toInt64()
+            let ayuPresentFilterPrompt: (Bool) -> Void = { forChat in
+                let ayuPrompt = promptController(context: context, text: forChat ? "Add Filter to Current Chat" : "Add Filter", subtitle: "Regular expression. Matching incoming messages are hidden.", value: ayuFilterText, placeholder: "Expression", apply: { value in
+                    guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else {
+                        return
+                    }
+                    if (try? NSRegularExpression(pattern: value, options: [.caseInsensitive])) == nil {
+                        let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                        controllerInteraction.presentController(textAlertController(context: context, title: nil, text: "Regex syntax error", actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]), nil)
+                        return
+                    }
+                    let entry = forChat ? AyuFilters.chatEntry(peerId: ayuFilterPeerId, pattern: value) : value
+                    var patterns = AyuFilters.patterns
+                    if !patterns.contains(entry) {
+                        patterns.append(entry)
+                        AyuFilters.setPatterns(patterns)
+                        let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
+                    }
+                })
+                controllerInteraction.presentController(ayuPrompt, nil)
+            }
+            actions.append(.action(ContextMenuActionItem(text: "Add Filter", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuAddToFolder"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                ayuPresentFilterPrompt(false)
+            })))
+            if ayuFilterVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
+            actions.append(.action(ContextMenuActionItem(text: "Add Filter to Current Chat", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuAddToFolder"), color: theme.actionSheet.primaryTextColor)
+            }, action: { _, f in
+                f(.dismissWithoutContent)
+                ayuPresentFilterPrompt(true)
+            })))
+            if ayuFilterVisibility == .extended, let ayuMoved = actions.popLast() {
+                ayuExtendedActions.append(ayuMoved)
+            }
+        }
+
         // AyuGram: edit history
         let ayuEdits = AyuMessagesStore.shared.edits(message.id)
         if !ayuEdits.isEmpty {
@@ -1395,13 +1442,15 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
 
         // AyuGram: hide the message on this device
         let ayuHideVisibility = AyuGramSettings.contextMenuVisibility(.showHideMessageInContextMenu)
-        if ayuHideVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud {
-            let ayuHideId = message.id
+        if ayuHideVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud && message.id.peerId != context.account.peerId {
+            let ayuHideIds = messages.map { $0.id }
             actions.append(.action(ContextMenuActionItem(text: "Hide", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuClear"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.dismissWithoutContent)
-                let _ = ayuHideMessageLocally(account: context.account, id: ayuHideId).startStandalone()
+                for ayuHideId in ayuHideIds {
+                    let _ = ayuHideMessageLocally(account: context.account, id: ayuHideId).startStandalone()
+                }
             })))
             if ayuHideVisibility == .extended, let ayuMoved = actions.popLast() {
                 ayuExtendedActions.append(ayuMoved)
@@ -1410,7 +1459,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
 
         // AyuGram: search this chat for messages from the same user
         let ayuUserMessagesVisibility = AyuGramSettings.contextMenuVisibility(.showUserMessagesInContextMenu)
-        if ayuUserMessagesVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud && message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuSearchAuthor = message.author, ayuSearchAuthor.id.namespace == Namespaces.Peer.CloudUser {
+        if ayuUserMessagesVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud && message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuSearchAuthor = message.author {
             actions.append(.action(ContextMenuActionItem(text: "User Messages", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuTTL"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
@@ -1424,16 +1473,21 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
 
         // AyuGram: send the same text again
         let ayuRepeatVisibility = AyuGramSettings.contextMenuVisibility(.showRepeatMessageInContextMenu)
-        if ayuRepeatVisibility != .hidden && message.id.namespace == Namespaces.Message.Cloud && !message.text.isEmpty && message.media.isEmpty {
-            let ayuRepeatText = message.text
+        var ayuRepeatAllowed = message.id.namespace == Namespaces.Message.Cloud && !message.isCopyProtected() && !chatPresentationInterfaceState.copyProtectionEnabled && !message.media.contains(where: { $0 is TelegramMediaAction })
+        if let ayuRepeatChannel = message.peers[message.id.peerId] as? TelegramChannel, case .broadcast = ayuRepeatChannel.info {
+            ayuRepeatAllowed = false
+        }
+        if ayuRepeatVisibility != .hidden && ayuRepeatAllowed {
+            let ayuRepeatIds = messages.map { $0.id }
             let ayuRepeatPeerId = message.id.peerId
             let ayuRepeatThreadId = message.threadId
-            let ayuRepeatAttributes = message.attributes.filter { $0 is TextEntitiesMessageAttribute }
             actions.append(.action(ContextMenuActionItem(text: "Repeat Message", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Ayu/Repeat"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.dismissWithoutContent)
-                let _ = enqueueMessages(account: context.account, peerId: ayuRepeatPeerId, messages: [.message(text: ayuRepeatText, attributes: ayuRepeatAttributes, inlineStickers: [:], mediaReference: nil, threadId: ayuRepeatThreadId, replyToMessageId: nil, replyToStoryId: nil, localGroupingKey: nil, correlationId: nil, bubbleUpEmojiOrStickersets: [])]).startStandalone()
+                let _ = enqueueMessages(account: context.account, peerId: ayuRepeatPeerId, messages: ayuRepeatIds.map { ayuId -> EnqueueMessage in
+                    return .forward(source: ayuId, threadId: ayuRepeatThreadId, grouping: .auto, attributes: [], correlationId: nil)
+                }).startStandalone()
             })))
             if ayuRepeatVisibility == .extended, let ayuMoved = actions.popLast() {
                 ayuExtendedActions.append(ayuMoved)
@@ -1449,9 +1503,26 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                 return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuInfo"), color: theme.actionSheet.primaryTextColor)
             }, action: { c, _ in
                 // One row per fact (title, value, icon), grouped as on desktop; tapping a row copies its value.
+                let ayuDcName: (Int) -> String = { dc in
+                    if dc < 1 {
+                        return "DC_UNKNOWN"
+                    }
+                    let name: String
+                    switch dc {
+                    case 1, 3:
+                        name = "Miami FL, USA"
+                    case 2, 4:
+                        name = "Amsterdam, NL"
+                    case 5:
+                        name = "Singapore, SG"
+                    default:
+                        name = "UNKNOWN"
+                    }
+                    return "DC\(dc), \(name)"
+                }
+                var ayuCopyValues: [String: String] = [:]
                 let ayuFormatter = DateFormatter()
-                ayuFormatter.dateStyle = .medium
-                ayuFormatter.timeStyle = .medium
+                ayuFormatter.dateFormat = "MM/dd/yyyy 'at' HH:mm:ss"
 
                 var ayuPostRows: [(String, String, String)] = []
                 var ayuMessageRows: [(String, String, String)] = []
@@ -1469,7 +1540,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                         ayuPostRows.append(("Shares", "\(attribute.count)", "Ayu/MenuViewReplies"))
                     }
                 }
-                if let ayuForwardInfo = ayuDetailsMessage.forwardInfo {
+                if let ayuForwardInfo = ayuDetailsMessage.forwardInfo, ayuForwardInfo.psaType == nil {
                     ayuMessageRows.append(("Forward Date", ayuFormatter.string(from: Date(timeIntervalSince1970: Double(ayuForwardInfo.date))), "Ayu/MenuTTL"))
                 }
 
@@ -1482,18 +1553,23 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                             ayuMediaRows.append(("Mime Type", file.mimeType, "Ayu/MenuShowAll"))
                         }
                         if let fileName = file.fileName, !fileName.isEmpty {
-                            ayuMediaRows.append(("File Name", fileName, "Ayu/EditsHistory"))
+                            ayuMediaRows.append(("File Name", fileName.count > 20 ? "\u{2026}" + String(fileName.suffix(20)) : fileName, "Ayu/EditsHistory"))
+                            ayuCopyValues["File Name"] = fileName
                         }
                         if let dimensions = file.dimensions {
                             ayuMediaRows.append(("Resolution", "\(dimensions.width)x\(dimensions.height)", "Ayu/MenuStats"))
                         }
                         if let resource = file.resource as? CloudDocumentMediaResource {
-                            ayuMediaRows.append(("Datacenter", "\(resource.datacenterId)", "Ayu/MenuBoosts"))
+                            ayuMediaRows.append(("Datacenter", ayuDcName(resource.datacenterId), "Ayu/MenuBoosts"))
                         }
                     } else if let image = media as? TelegramMediaImage, let representation = largestImageRepresentation(image.representations) {
+                        if let size = representation.resource.size {
+                            ayuMediaRows.append(("File Size", ByteCountFormatter.string(fromByteCount: size, countStyle: .file), "Ayu/MenuDownload"))
+                        }
+                        ayuMediaRows.append(("Mime Type", "image/jpeg", "Ayu/MenuShowAll"))
                         ayuMediaRows.append(("Resolution", "\(representation.dimensions.width)x\(representation.dimensions.height)", "Ayu/MenuStats"))
                         if let resource = representation.resource as? CloudPhotoSizeMediaResource {
-                            ayuMediaRows.append(("Datacenter", "\(resource.datacenterId)", "Ayu/MenuBoosts"))
+                            ayuMediaRows.append(("Datacenter", ayuDcName(resource.datacenterId), "Ayu/MenuBoosts"))
                         }
                     }
                 }
@@ -1516,11 +1592,12 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     ayuDetailItems.append(.separator)
                     for ayuRow in ayuGroup {
                         let ayuValue = ayuRow.1
+                        let ayuCopyValue = ayuCopyValues[ayuRow.0] ?? ayuRow.1
                         let ayuIconName = ayuRow.2
                         ayuDetailItems.append(.action(ContextMenuActionItem(text: ayuRow.0, textLayout: .secondLineWithValue(ayuValue), icon: { theme in
                             return generateTintedImage(image: UIImage(bundleImageName: ayuIconName), color: theme.actionSheet.primaryTextColor)
                         }, action: { _, f in
-                            UIPasteboard.general.string = ayuValue
+                            UIPasteboard.general.string = ayuCopyValue
                             f(.default)
                         })))
                     }
@@ -1548,72 +1625,35 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             })))
         }
 
-        let ayuMenuMessageId = message.id
-        // AyuGram: add the message text to the filters
-        let ayuFilterVisibility = AyuGramSettings.contextMenuVisibility(.showAddFilterInContextMenu)
-        if ayuFilterVisibility != .hidden && AyuGramSettings.bool(.filtersEnabled) && message.flags.contains(.Incoming) && !message.text.isEmpty {
-            let ayuFilterText = message.text
-            actions.append(.action(ContextMenuActionItem(text: "Add Filter", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuAddToFolder"), color: theme.actionSheet.primaryTextColor)
-            }, action: { _, f in
-                f(.default)
-                var patterns = AyuFilters.patterns
-                let pattern = NSRegularExpression.escapedPattern(for: ayuFilterText)
-                if !patterns.contains(pattern) {
-                    patterns.append(pattern)
-                    AyuFilters.setPatterns(patterns)
-                    let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
-                }
-            })))
-            if ayuFilterVisibility == .extended, let ayuMoved = actions.popLast() {
-                ayuExtendedActions.append(ayuMoved)
-            }
-            let ayuFilterPeerId = message.id.peerId.toInt64()
-            actions.append(.action(ContextMenuActionItem(text: "Add Filter to Current Chat", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuAddToFolder"), color: theme.actionSheet.primaryTextColor)
-            }, action: { _, f in
-                f(.default)
-                var patterns = AyuFilters.patterns
-                let pattern = AyuFilters.chatEntry(peerId: ayuFilterPeerId, pattern: NSRegularExpression.escapedPattern(for: ayuFilterText))
-                if !patterns.contains(pattern) {
-                    patterns.append(pattern)
-                    AyuFilters.setPatterns(patterns)
-                    let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
-                }
-            })))
-            if ayuFilterVisibility == .extended, let ayuMoved = actions.popLast() {
-                ayuExtendedActions.append(ayuMoved)
-            }
-        }
-
-        // AyuGram: shadow ban the author (their messages are hidden in groups on this device)
-        if ayuFilterVisibility != .hidden && AyuGramSettings.bool(.filtersEnabled) && message.flags.contains(.Incoming) && message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuBanAuthor = message.author, ayuBanAuthor.id.namespace == Namespaces.Peer.CloudUser {
+        // AyuGram: shadow ban the author (their messages are hidden in groups on this device); follows Enable Filters, as on desktop
+        if AyuGramSettings.bool(.filtersEnabled) && message.flags.contains(.Incoming) && message.id.peerId.namespace != Namespaces.Peer.CloudUser, let ayuBanAuthor = message.author, ayuBanAuthor.id.namespace == Namespaces.Peer.CloudUser {
             let ayuBanEntry = AyuFilters.userPrefix + String(ayuBanAuthor.id.id._internalGetInt64Value())
-            actions.append(.action(ContextMenuActionItem(text: "Shadow Ban", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuStealth"), color: theme.actionSheet.primaryTextColor)
+            let ayuIsBanned = AyuFilters.patterns.contains(ayuBanEntry)
+            actions.append(.action(ContextMenuActionItem(text: ayuIsBanned ? "Unshadow Ban" : "Shadow Ban", icon: { theme in
+                return generateTintedImage(image: UIImage(bundleImageName: ayuIsBanned ? "Ayu/MenuShowInChat" : "Ayu/MenuStealth"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.default)
                 var patterns = AyuFilters.patterns
-                if !patterns.contains(ayuBanEntry) {
+                if ayuIsBanned {
+                    patterns.removeAll(where: { $0 == ayuBanEntry })
+                } else if !patterns.contains(ayuBanEntry) {
                     patterns.append(ayuBanEntry)
-                    AyuFilters.setPatterns(patterns)
-                    let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
                 }
+                AyuFilters.setPatterns(patterns)
+                let _ = ayuRefreshMessage(account: context.account, id: ayuMenuMessageId).startStandalone()
             })))
-            if ayuFilterVisibility == .extended, let ayuMoved = actions.popLast() {
-                ayuExtendedActions.append(ayuMoved)
-            }
         }
 
-        // AyuGram: explicit read receipt while read receipts are suppressed
-        if !AyuGramSettings.sendReadMessages && message.id.namespace == Namespaces.Message.Cloud {
+        // AyuGram: explicit read receipt while read receipts are suppressed; added after Select, as on desktop
+        var ayuReadMessageItem: ContextMenuItem?
+        if !AyuGramSettings.sendReadMessages && message.id.namespace == Namespaces.Message.Cloud && message.flags.contains(.Incoming) && !AyuMessagesStore.shared.isDeleted(message.id) && message.id.peerId != context.account.peerId {
             let ayuReadPeerId = message.id.peerId
-            actions.append(.action(ContextMenuActionItem(text: "Read Message", icon: { theme in
+            ayuReadMessageItem = .action(ContextMenuActionItem(text: "Read Message", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Ayu/MenuShowInChat"), color: theme.actionSheet.primaryTextColor)
             }, action: { _, f in
                 f(.default)
                 let _ = ayuSendReadReceiptNow(account: context.account, peerId: ayuReadPeerId).startStandalone()
-            })))
+            }))
         }
 
         // AyuGram: the extended menu
@@ -2435,7 +2475,6 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     })
                 })))
             }
-
             if messages.count > 1 {
                 if !actions.isEmpty && !didAddSeparator {
                     didAddSeparator = true
@@ -2450,6 +2489,9 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     })
                 })))
             }
+        }
+        if let ayuReadMessageItem = ayuReadMessageItem {
+            actions.append(ayuReadMessageItem)
         }
         
         var canViewStats = false

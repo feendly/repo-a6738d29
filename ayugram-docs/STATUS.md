@@ -1,7 +1,7 @@
 # AyuGram for iOS: feature status
 
 One row per AyuGram Desktop setting or feature (source: `ayu/ayu_settings.h`
-and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-16 (run 43827376720 installed).
+and the `ayu/features` and `ayu/ui` folders). Updated 2026-11-24 (run 45291403361 installed).
 
 Status values:
 
@@ -23,6 +23,28 @@ Status values:
 | N/A | 13 |
 
 Some rows group several related desktop settings, so the row count is lower than the number of individual settings.
+
+## Desktop look and layout (2026-11-23 parity pass)
+
+Compared side by side with AyuGram Desktop 7.2.9 on the PC (account luki), and by three read-only code reviews
+against the desktop source. Device results: TESTING rows 148 to 152.
+
+- Settings follow desktop: "AyuGram Preferences" with a main page (logo, version, Categories, Links) and the
+  AyuGram, Filters, General, Appearance, Chats and Other pages, with desktop's sections, order, names, texts and
+  row icons (desktop's own icon files, converted by `F:\ayugram-ios\tmp\parity\gen_assets.py`). Desktop-only rows
+  (tray, MD3 switches, window and bubble sliders, donations, crash reporting, URL scheme) are left out; the iOS-only
+  switches are in Other.
+- Deleted and edited marks with "Replace with Icons" use desktop's bin and pencil, tinted like the time.
+- Message menu items use desktop's names, icons, order and Hidden / Shown / Extended Menu choice. iOS has no
+  CTRL/SHIFT, so Extended Menu items sit in an "AyuGram" submenu of the message menu.
+- Differences kept on purpose: the profile picker is a row ("Global Settings" or this account); Avatar Corners is
+  Circle or Square, not a slider; a locked Ghost Mode option shows a lock symbol instead of being dimmed; the
+  History screen is a sheet; Shot and Shadow Ban are message-menu items.
+- Not ported yet (desktop has them): View Deleted, Show/Hide Filtered, Delete own messages, Open Channel, Burn,
+  Copy Callback Data, Pack Owner in Details, the burnt-media icon beside the time, the deleted mark on service
+  messages, AyuGram items in forum-topic menus, translucent deleted stickers and round videos, peer names and an
+  add button in the Shadow Ban list, Select Chat for per-chat filters, and the AyuGram logo as the default app icon
+  (the app still starts with Telegram's icon; the AyuGram icons are in Appearance).
 
 ## Ghost mode
 
