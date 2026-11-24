@@ -2558,7 +2558,16 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     mediaDraftContentType = peerData.mediaDraftContentType
                     threadInfo = threadInfoValue
                     hasUnseenMentions = hasUnseenMentionsValue
-                    hasUnseenReactions = hasUnseenReactionsValue
+                    // AyuGram: no unread-reaction badge where reactions are hidden, as on desktop
+                    var ayuIsBroadcast = false
+                    if case let .channel(channel) = peerValue.peer, case .broadcast = channel.info {
+                        ayuIsBroadcast = true
+                    }
+                    if let ayuPeerId = peerValue.peer?.id, AyuGramSettings.reactionsHidden(peerId: ayuPeerId, isBroadcastChannel: ayuIsBroadcast) {
+                        hasUnseenReactions = false
+                    } else {
+                        hasUnseenReactions = hasUnseenReactionsValue
+                    }
                     hasUnseenPollVotes = hasUnseenPollVotesValue
                     forumTopicData = forumTopicDataValue
                     topForumTopicItems = topForumTopicItemsValue

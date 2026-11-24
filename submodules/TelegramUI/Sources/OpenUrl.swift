@@ -582,10 +582,41 @@ private func openCheckedExternalUrl(context: AccountContext, urlContext: OpenURL
                                 requestsContext: nil
                             ) {
                                 navigationController?.pushViewController(controller)
+                            } else if peer == nil {
+                                // AyuGram: desktop answers an unknown ID with "User not found."
+                                ayuPresentUserNotFound(context: context)
                             }
                         })
                         return
                     }
+                case "chat":
+                    // AyuGram: tg://chat?id=<id> opens a channel or group the app knows, as on desktop
+                    if let idValue = params["id"].flatMap(Int64.init), idValue > 0 {
+                        let rawId = EnginePeer.Id.Id._internalFromInt64Value(idValue)
+                        let _ = (context.engine.data.get(
+                            TelegramEngine.EngineData.Item.Peer.Peer(id: EnginePeer.Id(namespace: Namespaces.Peer.CloudChannel, id: rawId)),
+                            TelegramEngine.EngineData.Item.Peer.Peer(id: EnginePeer.Id(namespace: Namespaces.Peer.CloudGroup, id: rawId))
+                        )
+                        |> deliverOnMainQueue).startStandalone(next: { channel, group in
+                            if let peer = channel ?? group {
+                                context.sharedContext.applicationBindings.dismissNativeController()
+                                if let navigationController = navigationController {
+                                    context.sharedContext.navigateToChatController(NavigateToChatControllerParams(navigationController: navigationController, context: context, chatLocation: .peer(peer)))
+                                }
+                            } else {
+                                ayuPresentUserNotFound(context: context)
+                            }
+                        })
+                        return
+                    }
+                case "ayusettings", "ayu":
+                    // AyuGram: tg://ayusettings?s=<setting> opens the page that holds the setting, as on desktop
+                    if let setting = params["s"], !setting.isEmpty {
+                        handleResolvedUrl(.settings(.path("ayu/" + setting)))
+                    } else {
+                        handleResolvedUrl(.settings(.path("ayu")))
+                    }
+                    return
                 case "login":
                     if let _ = params["token"] {
                         let alertController = textAlertController(
@@ -1090,4 +1121,10 @@ private func openCheckedExternalUrl(context: AccountContext, urlContext: OpenURL
     } else {
         continueHandling()
     }
+}
+
+// AyuGram: desktop's reply to a tg://user or tg://chat link whose ID the app does not know
+private func ayuPresentUserNotFound(context: AccountContext) {
+    let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+    context.sharedContext.presentGlobalController(textAlertController(context: context, title: nil, text: "User not found.", actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})]), nil)
 }

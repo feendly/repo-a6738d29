@@ -554,6 +554,36 @@ public func ayuGramSettingsController(context: AccountContext) -> ViewController
     return ayuGramSettingsPageController(context: context, page: .main)
 }
 
+/// tg://ayusettings?s=<setting>: the page that holds that setting, as desktop opens its section.
+/// Names are desktop's (filterZalgo, hideNotificationCounters, ...); an unknown one opens the main page.
+public func ayuGramSettingsController(context: AccountContext, setting: String) -> ViewController {
+    guard let page = ayuPageHolding(setting: setting) else {
+        return ayuGramSettingsController(context: context)
+    }
+    return ayuGramSettingsPageController(context: context, page: page)
+}
+
+private func ayuPageHolding(setting: String) -> AyuPage? {
+    let name = setting.lowercased()
+    let matches: (String) -> Bool = { id in
+        let lowered = id.lowercased()
+        return lowered == name || lowered.hasSuffix(":" + name)
+    }
+    let state = AyuScreenState()
+    let pages: [AyuPage] = [.ghost, .filters, .general, .appearance, .chats, .other]
+    for page in pages {
+        for entry in ayuSettingsEntries(page: page, state: state, appIcons: [], currentAppIcon: nil) {
+            if matches(entry.id) {
+                return page
+            }
+            if case let .expandable(_, _, _, subItems, _) = entry.row, subItems.contains(where: { matches($0.id) }) {
+                return page
+            }
+        }
+    }
+    return nil
+}
+
 /// The shared filters list, opened from the chat menu ("View Filters").
 public func ayuGramFiltersController(context: AccountContext) -> ViewController {
     return ayuGramSettingsPageController(context: context, page: .filterList)

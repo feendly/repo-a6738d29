@@ -3912,7 +3912,8 @@ private final class ChatReadReportContextItemNode: ASDisplayNode, ContextMenuCus
     private var validLayout: (calculatedWidth: CGFloat, size: CGSize)?
 
     private func timestampText(_ timestamp: Int32, today: @escaping (String) -> String, yesterday: @escaping (String) -> String, date: @escaping (String) -> String) -> String {
-        return humanReadableStringForTimestamp(strings: self.presentationData.strings, dateTimeFormat: self.presentationData.dateTimeFormat, timestamp: timestamp, alwaysShowTime: true, allowYesterday: true, format: HumanReadableStringFormat(
+        // AyuGram: Show Message Seconds also covers the times in the message menu, as on desktop
+        return humanReadableStringForTimestamp(strings: self.presentationData.strings, dateTimeFormat: self.presentationData.dateTimeFormat, timestamp: timestamp, alwaysShowTime: true, allowYesterday: true, withSeconds: AyuGramSettings.bool(.showMessageSeconds), format: HumanReadableStringFormat(
             dateFormatString: { value in
                 return PresentationStrings.FormattedString(string: date(value), ranges: [])
             },
@@ -4032,7 +4033,8 @@ private final class ChatReadReportContextItemNode: ASDisplayNode, ContextMenuCus
                     }
                 }
             } else if self.item.message.id.peerId.namespace == Namespaces.Peer.CloudUser, let timestamp = currentStats.readTimestamps.first?.value {
-                let dateText = humanReadableStringForTimestamp(strings: self.presentationData.strings, dateTimeFormat: self.presentationData.dateTimeFormat, timestamp: timestamp, alwaysShowTime: true, allowYesterday: true, format: HumanReadableStringFormat(
+                // AyuGram: read time with seconds when Show Message Seconds is on, as on desktop
+                let dateText = humanReadableStringForTimestamp(strings: self.presentationData.strings, dateTimeFormat: self.presentationData.dateTimeFormat, timestamp: timestamp, alwaysShowTime: true, allowYesterday: true, withSeconds: AyuGramSettings.bool(.showMessageSeconds), format: HumanReadableStringFormat(
                     dateFormatString: { value in
                         return PresentationStrings.FormattedString(string: self.presentationData.strings.Chat_PrivateMessageSeenTimestamp_Date(value).string, ranges: [])
                     },

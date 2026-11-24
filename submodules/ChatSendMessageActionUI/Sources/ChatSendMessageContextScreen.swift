@@ -553,11 +553,13 @@ final class ChatSendMessageContextScreenComponent: Component {
             switch component.params {
             case let.sendMessage(sendMessage):
                 if !reminders {
+                    // AyuGram: while silent is the default, this item sends with sound, as on desktop
+                    let ayuSendWithSound = AyuGramSettings.sendsWithoutSoundByDefault
                     items.append(.action(ContextMenuActionItem(
                         id: AnyHashable("silent"),
-                        text: environment.strings.Conversation_SendMessage_SendSilently,
+                        text: ayuSendWithSound ? "Send With Sound" : environment.strings.Conversation_SendMessage_SendSilently,
                         icon: { theme in
-                            return generateTintedImage(image: UIImage(bundleImageName: "Chat/Input/Menu/SilentIcon"), color: theme.contextMenu.primaryColor)
+                            return generateTintedImage(image: UIImage(bundleImageName: ayuSendWithSound ? "Chat/Context Menu/Unmute" : "Chat/Input/Menu/SilentIcon"), color: theme.contextMenu.primaryColor)
                         }, action: { [weak self] _, _ in
                             guard let self, let component = self.component else {
                                 return
@@ -569,7 +571,12 @@ final class ChatSendMessageContextScreenComponent: Component {
                                 textIsAboveMedia: self.mediaCaptionIsAbove
                             )
                             
-                            component.sendMessage(.silently, sendParameters)
+                            if ayuSendWithSound {
+                                AyuGramSettings.markNextSendWithSound()
+                                component.sendMessage(.generic, sendParameters)
+                            } else {
+                                component.sendMessage(.silently, sendParameters)
+                            }
                             self.environment?.controller()?.dismiss()
                         }
                     )))

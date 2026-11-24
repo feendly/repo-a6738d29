@@ -16,9 +16,39 @@ import WebUI
 import AvatarNode
 import PeerNameColorItem
 import BoostLevelIconComponent
+import UndoUI
 
 private let enabledPublicBioEntities: EnabledEntityTypes = [.allUrl, .mention, .hashtag]
 private let enabledPrivateBioEntities: EnabledEntityTypes = [.internalUrl, .mention, .hashtag]
+
+// AyuGram: desktop labels the ID row with the datacenter of the profile photo ("ID" without a photo)
+private func ayuIdRowLabel(_ photo: [TelegramMediaImageRepresentation]) -> String {
+    guard let resource = photo.first?.resource as? CloudPeerPhotoSizeMediaResource else {
+        return "ID"
+    }
+    let dc = resource.datacenterId
+    if dc < 1 {
+        return "DC_UNKNOWN"
+    }
+    let name: String
+    switch dc {
+    case 1, 3:
+        name = "Miami FL, USA"
+    case 2, 4:
+        name = "Amsterdam, NL"
+    case 5:
+        name = "Singapore, SG"
+    default:
+        name = "UNKNOWN"
+    }
+    return "DC\(dc), \(name)"
+}
+
+// AyuGram: copying an ID shows desktop's toast
+private func ayuCopyPeerId(_ text: String, interaction: PeerInfoInteraction, presentationData: PresentationData) {
+    UIPasteboard.general.string = text
+    interaction.getController()?.present(UndoOverlayController(presentationData: presentationData, content: .copy(text: "ID copied to clipboard."), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .current)
+}
 
 private func peerVerificationDescriptionEntities(_ verification: PeerVerification) -> [MessageTextEntity] {
     var result = verification.descriptionEntities
@@ -196,8 +226,8 @@ func infoItems(
         // AyuGram: show the user ID (the same number in both API forms); tapping copies it.
         if AyuGramSettings.peerIdDisplay != .hidden {
             let ayuIdText = "\(user.id.id._internalGetInt64Value())"
-            items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: "ID", text: ayuIdText, textColor: .primary, action: { _, _ in
-                UIPasteboard.general.string = ayuIdText
+            items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: ayuIdRowLabel(user.photo), text: ayuIdText, textColor: .primary, action: { _, _ in
+                ayuCopyPeerId(ayuIdText, interaction: interaction, presentationData: presentationData)
             }, longTapAction: nil, contextAction: nil, requestLayout: { animated in
                 interaction.requestLayout(animated)
             }))
@@ -670,6 +700,15 @@ func infoItems(
             } else {
                 items[currentPeerInfoSection]!.append(PeerInfoScreenCommentItem(id: ItemUsernameInfo, text: presentationData.strings.PeerInfo_PrivateShareLinkInfo))
             }
+            // AyuGram: the topic's ID, as on desktop
+            if AyuGramSettings.peerIdDisplay != .hidden && threadId != 0 {
+                let ayuTopicIdText = "\(threadId)"
+                items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39002, label: "ID", text: ayuTopicIdText, textColor: .primary, action: { _, _ in
+                    ayuCopyPeerId(ayuTopicIdText, interaction: interaction, presentationData: presentationData)
+                }, longTapAction: nil, contextAction: nil, requestLayout: { animated in
+                    interaction.requestLayout(animated)
+                }))
+            }
         } else {
             if let location = (data.cachedData as? CachedChannelData)?.peerGeoLocation {
                 items[.groupLocation]!.append(PeerInfoScreenHeaderItem(id: ItemLocationHeader, text: presentationData.strings.GroupInfo_Location.uppercased()))
@@ -760,8 +799,8 @@ func infoItems(
                 if ayuPeerIdDisplay != .hidden {
                     let ayuRawId = channel.id.id._internalGetInt64Value()
                     let ayuIdText = ayuPeerIdDisplay == .botApi ? "-100\(ayuRawId)" : "\(ayuRawId)"
-                    items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: "ID", text: ayuIdText, textColor: .primary, action: { _, _ in
-                        UIPasteboard.general.string = ayuIdText
+                    items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: ayuIdRowLabel(channel.photo), text: ayuIdText, textColor: .primary, action: { _, _ in
+                        ayuCopyPeerId(ayuIdText, interaction: interaction, presentationData: presentationData)
                     }, longTapAction: nil, contextAction: nil, requestLayout: { animated in
                         interaction.requestLayout(animated)
                     }))
@@ -922,8 +961,8 @@ func infoItems(
         if ayuGroupIdDisplay != .hidden {
             let ayuRawId = group.id.id._internalGetInt64Value()
             let ayuIdText = ayuGroupIdDisplay == .botApi ? "-\(ayuRawId)" : "\(ayuRawId)"
-            items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: "ID", text: ayuIdText, textColor: .primary, action: { _, _ in
-                UIPasteboard.general.string = ayuIdText
+            items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(id: 39001, label: ayuIdRowLabel(group.photo), text: ayuIdText, textColor: .primary, action: { _, _ in
+                ayuCopyPeerId(ayuIdText, interaction: interaction, presentationData: presentationData)
             }, longTapAction: nil, contextAction: nil, requestLayout: { animated in
                 interaction.requestLayout(animated)
             }))

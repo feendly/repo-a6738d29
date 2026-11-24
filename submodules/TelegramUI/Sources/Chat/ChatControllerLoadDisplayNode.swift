@@ -5039,7 +5039,12 @@ extension ChatControllerImpl {
                                 strongSelf.chatDisplayNode.navigateButtons.pollVotesCount = 0
                             } else {
                                 strongSelf.chatDisplayNode.navigateButtons.mentionCount = mentionCount
-                                strongSelf.chatDisplayNode.navigateButtons.reactionsCount = reactionCount
+                                // AyuGram: no unread-reaction button where reactions are hidden, as on desktop
+                                var ayuIsBroadcast = false
+                                if let channel = strongSelf.presentationInterfaceState.renderedPeer?.peer as? TelegramChannel, case .broadcast = channel.info {
+                                    ayuIsBroadcast = true
+                                }
+                                strongSelf.chatDisplayNode.navigateButtons.reactionsCount = AyuGramSettings.reactionsHidden(peerId: peerId, isBroadcastChannel: ayuIsBroadcast) ? 0 : reactionCount
                                 strongSelf.chatDisplayNode.navigateButtons.pollVotesCount = pollVoteCount
                             }
                         }
@@ -5054,7 +5059,12 @@ extension ChatControllerImpl {
                                 strongSelf.chatDisplayNode.navigateButtons.pollVotesCount = 0
                             } else {
                                 strongSelf.chatDisplayNode.navigateButtons.mentionCount = mentionCount
-                                strongSelf.chatDisplayNode.navigateButtons.reactionsCount = reactionCount
+                                // AyuGram: no unread-reaction button where reactions are hidden, as on desktop
+                                var ayuIsBroadcast = false
+                                if let channel = strongSelf.presentationInterfaceState.renderedPeer?.peer as? TelegramChannel, case .broadcast = channel.info {
+                                    ayuIsBroadcast = true
+                                }
+                                strongSelf.chatDisplayNode.navigateButtons.reactionsCount = AyuGramSettings.reactionsHidden(peerId: peerId, isBroadcastChannel: ayuIsBroadcast) ? 0 : reactionCount
                                 strongSelf.chatDisplayNode.navigateButtons.pollVotesCount = pollVoteCount
                             }
                         }

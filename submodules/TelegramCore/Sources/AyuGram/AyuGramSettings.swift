@@ -544,6 +544,46 @@ public final class AyuGramSettings {
         return unlockedCount != 0
     }
 
+    /// Hide Reactions covers this kind of chat (channels, groups, private chats), as desktop decides it.
+    public static func reactionsHidden(peerId: PeerId, isBroadcastChannel: Bool) -> Bool {
+        switch peerId.namespace {
+        case Namespaces.Peer.CloudUser:
+            return !bool(.showPrivateChatReactions)
+        case Namespaces.Peer.CloudGroup:
+            return !bool(.showGroupReactions)
+        case Namespaces.Peer.CloudChannel:
+            return isBroadcastChannel ? !bool(.showChannelReactions) : !bool(.showGroupReactions)
+        default:
+            return false
+        }
+    }
+
+    /// Send without Sound makes silent sending the default right now (Always, or When using Ghost Mode while it is on).
+    public static var sendsWithoutSoundByDefault: Bool {
+        return bool(.sendWithoutSoundAlways) || (bool(.sendWithoutSoundInGhost) && isGhostModeActive)
+    }
+
+    private static let sendWithSoundLock = NSLock()
+    private static var sendWithSoundMarkedAt: Double = 0.0
+
+    /// "Send With Sound" in the send menu: the next message goes out with sound although silent is the default.
+    public static func markNextSendWithSound() {
+        sendWithSoundLock.lock()
+        sendWithSoundMarkedAt = CFAbsoluteTimeGetCurrent()
+        sendWithSoundLock.unlock()
+    }
+
+    /// Takes the mark set by markNextSendWithSound, if it is recent.
+    public static func consumeSendWithSound() -> Bool {
+        sendWithSoundLock.lock()
+        defer {
+            sendWithSoundLock.unlock()
+        }
+        let marked = sendWithSoundMarkedAt != 0.0 && CFAbsoluteTimeGetCurrent() - sendWithSoundMarkedAt < 10.0
+        sendWithSoundMarkedAt = 0.0
+        return marked
+    }
+
     public static func setGhostModeActive(_ active: Bool) {
         for entry in ghostKeys {
             if bool(entry.lock) {

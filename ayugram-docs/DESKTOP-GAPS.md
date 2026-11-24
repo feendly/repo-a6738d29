@@ -7,11 +7,16 @@ such as Peek Online, read and typing exclusions, Save Last Seen Date, database e
 
 Order of work: ghost-mode leaks first, then tracker corrections, then missing features by size.
 
-Fixed since the audit (not yet tested on the iPad): channel views, thread reads and pinned-story views in ghost
-mode, scheduled sending rules (commit d713406a); filter scope for groups, shadow bans and blocked users under Enable
-Filters and covering forwards, Filter Zalgo stripping instead of hiding, Disable Ads for sponsored search results and
-the promoted chat, folder tab counters, the reaction picker where reactions are hidden, seconds in last-seen times
-(the commit after d713406a). STATUS.md rows were rewritten to match.
+Fixed since the audit and tested on the iPad (TESTING rows 153-161): deleted and edited icons, Add Filter editor,
+chat menu items, folder tab counters, the reaction picker where reactions are hidden, Filter Zalgo stripping, filter
+scope for private chats, deleted stickers kept and dimmed, basic group ID.
+
+Fixed, not yet tested: channel views, thread reads and pinned-story views in ghost mode, scheduled sending rules,
+shadow bans and blocked users under Enable Filters and covering forwards, Disable Ads for sponsored search results and
+the promoted chat, seconds in last-seen times, messages removed by auto-delete kept (commits d713406a to 94f4587a);
+seconds in read, edited and sent times in the message menu, Send With Sound, tg://chat?id=, tg://ayusettings?s=,
+"User not found.", the unread-reaction button and badge where reactions are hidden, the datacenter as the ID row
+label, the "ID copied" toast, topic IDs (the commit after 94f4587a). STATUS.md rows were rewritten to match.
 
 ## 1. Ghost mode leaks (activity still sent while it should not be)
 

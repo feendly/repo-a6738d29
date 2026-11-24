@@ -58,7 +58,7 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | ghostModeActive (master switch) | off | TESTED | Flips the five switches both ways |
 | markReadAfterAction | on | LOG ONLY | Reacting sends one read receipt (log `read forced`, `read push SENT`) |
 | useScheduledMessages | off | TESTED | "Schedule Messages". From commit d713406a only while Ghost Mode is on, as on desktop, and media waits 12 + max(6, 0.7 s per MB) + 1 s (desktop's formula); earlier builds checked the online switch and always used 12 s. Desktop's x1.2 behind a proxy is not ported |
-| sendWithoutSound | Never | TESTED | "Send without Sound": Never / When using Ghost Mode / Always, follows the ghost profile. Checked on the receiving account: a message sent with Always arrives marked silent (TESTING row 146) |
+| sendWithoutSound | Never | TESTED | "Send without Sound": Never / When using Ghost Mode / Always, follows the ghost profile. Checked on the receiving account: a message sent with Always arrives marked silent (TESTING row 146). While silent is the default, the send menu offers "Send With Sound" instead of "Send Without Sound", as on desktop (next build, untested) |
 | suggestGhostModeBeforeViewingStory | on | UNTESTED | Prompt when opening someone's stories from the chat list (run 43349311751). Ghost Mode stays on afterwards; desktop turns it off again when the story closes. Stories opened from a profile or a chat avatar are not covered |
 | Per-setting "locked" flags (5) | off | TESTED | Long-press an option under Ghost Mode (desktop: SHIFT-click). A locked option ignores taps and keeps its value when Ghost Mode is switched; the last unlocked option cannot be locked (TESTING row 149) |
 | useGlobalGhostMode (per-account ghost) | on | TESTED | "Profile" row on the AyuGram page: Global Settings or this account (desktop lists every account). Off: ghost settings, locks, Send without Sound and the story alert are stored per account and follow the account in front |
@@ -73,7 +73,7 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | saveForBots | off | UNTESTED | |
 | deletedMark | broom | TESTED | Broom shown. Custom mark: prompt opens with the current value; custom mark saved and shown (row 42) |
 | editedMark | "edited" | TESTED | Custom text, run 43002933120 |
-| semiTransparentDeletedMessages | off | TESTED | Bubble messages only (run 43084196247) |
+| semiTransparentDeletedMessages | off | TESTED | "Translucent Deleted Messages": bubbles (run 43084196247) and stickers (TESTING row 160), as on desktop. Round videos are not dimmed. Takes effect when the chat is reopened |
 | Deleted messages while app is closed | - | TESTED | App now stays running in the background (see Stay Connected). Kept a deletion sent from another device while the app was in the background (TESTING row 43). Not captured after a device reboot until the app runs again |
 | Deleted messages in groups and channels | - | TESTED | Group: nash's message deleted for everyone stays visible for luki with the deleted mark. Channel: log only |
 | Self-destructing media, cleared history, deleted chats | - | UNTESTED | View-once and timed photos, videos and voice messages are kept after they are opened or expire (follows the deleted-messages switch; not in secret chats). NEEDS THE USER: the test accounts cannot create view-once media without microphone, camera or photo access, which was not granted over VNC; send a view-once photo or voice message to nash or luki from another device, open it, and check it stays. Cleared history: TESTED in a private chat cleared for both by the other side; every message is kept, including the newest, which the server edits into an invisible "history cleared" service message (TESTING row 144). Deleted chats: TESTED; when the other side deletes a private chat for both, the chat stays in the list with every message kept and marked deleted (TESTING row 145) |
@@ -85,10 +85,10 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | Setting | Desktop default | iOS status |
 |---|---|---|
 | filtersEnabled (regex filters) | off | TESTED (filter "blockme" hid nash's message for luki) |
-| filtersEnabledInChats | off | TESTED | "Enable Shared Filters in Chats". In the build after commit d713406a it covers private chats and groups as on desktop (channels are always filtered); earlier builds covered private chats only and always filtered groups |
+| filtersEnabledInChats | off | TESTED | "Enable Shared Filters in Chats": covers private chats and groups as on desktop; channels are always filtered; outgoing messages never (TESTING row 159) |
 | hideFromBlocked | off | TESTED (groups: after luki blocked nash, nash's messages and join notice disappeared from the Test group). In the build after commit d713406a it needs Enable Filters and also covers forwards from a blocked user, as on desktop. Typing status, reactions and notifications of blocked users are not hidden |
 | shadowBanIds | empty | TESTED (via the message menu; listed on the Shadow Ban page). In the build after commit d713406a it needs Enable Filters, covers forwards from a banned user, and the menu offers Unshadow Ban, as on desktop. Desktop also bans from the profile menu |
-| filterZalgo | off | UNTESTED | In the build after commit d713406a the stacked marks (and bidi control characters) are replaced with invisible characters, as on desktop, in the chat and the chat list preview, with or without Enable Filters. Earlier builds hid the whole message instead. Names and signatures are not stripped |
+| filterZalgo | off | TESTED | The stacked marks (and bidi control characters) are replaced with invisible characters, as on desktop, in the chat and the chat list preview, with or without Enable Filters (TESTING row 158). Names and signatures are not stripped |
 | Per-chat filters, import/export | - | TESTED | "Add Filter to Current Chat" in the message menu (prefilled editor from commit d713406a) stores `chat:<id>:<pattern>`; Filters page: Import / Export / Clear through the clipboard (own JSON format, not desktop's); per-filter Edit, Disable / Enable, Delete. Desktop's Case Insensitive and Reversed options, excluded filters, import from URL and Select Chat are not ported |
 
 ## Premium, ads and clutter
@@ -123,8 +123,8 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 
 | Setting | Desktop default | iOS status | Notes |
 |---|---|---|---|
-| showMessageSeconds | off | TESTED | |
-| showPeerId | Bot API | TESTED | "Show Peer ID": Hide / Telegram API / Bot API; users, and channels and supergroups (-100 prefix in Bot API form). Basic groups, topics and the own ID in Settings not covered |
+| showMessageSeconds | off | TESTED | Message times. Also last seen (not observed, TESTING row 162). Read, edited and sent times in the message menu and the group reader list from the next build (row 163) |
+| showPeerId | Bot API | TESTED | "Show Peer ID": Hide / Telegram API / Bot API; users, channels and supergroups (-100 prefix in Bot API form) and basic groups (- prefix, TESTING row 161). From the next build (untested): the row is labelled with the profile photo's datacenter as on desktop, tapping shows "ID copied to clipboard.", and forum topics get their own ID row. The own ID in Settings is not covered; desktop's creation-date button not ported |
 | appIcon | default | TESTED | The 12 AyuGram Desktop icons (Default, Alt, Discord, Spotify, Extera, Nothing, Bard, YaPlus, Win95, Chibi, Chibi2, Extera2) are in the stock picker, Settings, Appearance, App Icon. Converted from the round desktop artwork and filled to a square with the edge colour. Run 43820003583; the home screen itself was not looked at (not reachable over VNC) |
 | monoFont / main font | system | TESTED | "Monospace Font" row takes a font name; regular weight only (bold and italic monospace stay Menlo). Desktop has no separate main-font setting. Run 43814121847 |
 | messageBubbleRadius | 16 | N/A | Stock setting exists: Appearance, Message Corners |
@@ -137,11 +137,11 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | adaptiveCoverColor | on | N/A | NOT PORTED, FOR THE USER TO CONFIRM: tints desktop AyuGram's own profile-music button with the cover's colour. iOS shows profile music with the stock design, which has no such button (see Saved music) |
 | improveLinkPreviews | off | TESTED | Previews for X, TikTok, Reddit, Instagram and Pixiv links are requested from the mirror hosts desktop uses; the message text keeps the original link (run 43561780256) |
 | hideFastShare | off | TESTED | Share arrow next to channel posts gone |
-| showChannelReactions | on | TESTED | Reaction row under a channel post hidden with the switch off |
-| showGroupReactions | on | TESTED | Run 43002933120 |
-| showPrivateChatReactions | on | TESTED | Reaction hidden with the switch off |
+| showChannelReactions | on | TESTED | Reaction row under a channel post hidden with the switch off; the reaction picker in the message menu too; from the next build also the unread-reaction button and chat list badge (untested) |
+| showGroupReactions | on | TESTED | Run 43002933120. From the next build also the unread-reaction button and chat list badge (untested) |
+| showPrivateChatReactions | on | TESTED | Reactions and the reaction picker in the message menu hidden (TESTING row 157); from the next build also the unread-reaction button and chat list badge (untested) |
 | wideMultiplier | 1.0 | N/A | Desktop window layout |
-| hideNotificationCounters | off | TESTED | Chats tab counter only (run 43084196247) |
+| hideNotificationCounters | off | TESTED | Chats tab counter and folder tab counters, as desktop hides its folder counters (TESTING row 156). The tabs update on their next redraw; desktop at once |
 | hideNotificationBadge | off | UNTESTED | With the app in front the badge is cleared and comes back when switched off (TESTING row 135). From run 43968637447 the switch is copied into the app group and the notification extension sets the badge to 0; the copy was seen, but no push arrived during a 10-minute background watch (row 142). Needs a message in an unmuted chat while the app is in the background. CANNOT BE SEEN ON THE TEST IPAD: no push reaches this TrollStore install at all (row 147: an unmuted chat got a message with the app in the background and iOS recorded no notification), so the extension never runs. Needs an install that receives pushes |
 | hideAllChatsFolder | off | TESTED | Hides the All Chats tab when there is at least one folder and starts on the first folder. The All Chats list stays reachable from the Chats tab long-press menu (no tab is highlighted then); swiping does not reach it |
 | channelBottomButton | Discuss | TESTED | "Channel Bottom Button": Hide / Mute / Discuss. Discuss only for channels with a discussion group, others keep Mute; Discuss opens the linked group (run 43527721168) |
@@ -193,7 +193,7 @@ against the desktop source. Device results: TESTING rows 148 to 152.
 | Forward without author / from restricted chats / repeat message | TESTED | Hiding the sender name is a stock option in the forward panel. Repeat is the context-menu item (text messages). With "Allow Copy and Save in Restricted Chats" on, Copy and Forward show in chats with protected content and the message goes out as a copy; a text message from a restricted group arrived with no "Forwarded from" header (TESTING row 129). The switch also lifts the screen-capture protection of such chats (row 130). Photos and files are sent by reference, no re-upload, and albums are not kept together; neither was tried |
 | Translator providers (Telegram, Google, Yandex, native) | TESTED | "Translation Provider" on the General page: Telegram, Google, Yandex. Google and Yandex use desktop's endpoints for the Translate action; plain text only, and chat-wide auto-translate stays on Telegram. No separate "native" provider. Run 43827376720 |
 | Webview options (spoof Android, larger size) | TESTED | "Report Android to Mini Apps" TESTED by log (the mini app address from the server says ios with it off and android with it on). The two size options resize the desktop mini app window and have no iOS equivalent |
-| `tg://ayu` settings links | TESTED | `tg://ayusettings` opens the AyuGram screen |
+| `tg://ayu` settings links | TESTED | `tg://ayusettings` opens the AyuGram screen. From the next build (untested): `tg://ayusettings?s=<setting>` opens the page holding that setting (desktop's names, e.g. filterZalgo); `tg://chat?id=<id>` opens a channel or group the app knows; both `tg://chat` and `tg://user` answer an unknown ID with "User not found.", as on desktop |
 | Saved music, cover search | N/A | NOT PORTED, FOR THE USER TO CONFIRM: stock Telegram for iOS already shows profile music and looks up missing album art itself. Desktop AyuGram's additions are its own button design and an iTunes cover lookup for that button |
 | Crash reporting to AyuGram | N/A | Deliberately not ported |
 | Donate / plugin info boxes | N/A | Desktop project specific |

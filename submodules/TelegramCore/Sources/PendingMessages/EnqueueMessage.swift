@@ -814,7 +814,8 @@ private func ayuCleanOutgoingLinks(_ messages: [EnqueueMessage]) -> [EnqueueMess
 
 private func ayuTransformOutgoingMessages(peerId: PeerId, messages: [EnqueueMessage]) -> [EnqueueMessage] {
     let messages = ayuCleanOutgoingLinks(messages)
-    let silent = AyuGramSettings.bool(.sendWithoutSoundAlways) || (AyuGramSettings.bool(.sendWithoutSoundInGhost) && AyuGramSettings.isGhostModeActive)
+    // Desktop: with silent as the default, "Send With Sound" sends this message with sound
+    let silent = AyuGramSettings.sendsWithoutSoundByDefault && !AyuGramSettings.consumeSendWithSound()
     let isCloudPeer = peerId.namespace == Namespaces.Peer.CloudUser || peerId.namespace == Namespaces.Peer.CloudGroup || peerId.namespace == Namespaces.Peer.CloudChannel
     let scheduled = AyuGramSettings.bool(.useScheduledMessages) && AyuGramSettings.isGhostModeActive && isCloudPeer
     if !silent && !scheduled {
